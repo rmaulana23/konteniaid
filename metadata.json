@@ -1,0 +1,5 @@
+{
+  "name": "Kontenia",
+  "description": "An AI-powered web application to transform ordinary product photos into professional, realistic advertisement images. Users can upload a photo, select a style, and generate high-quality ad photos in seconds.",
+  "requestFramePermissions": []
+}
