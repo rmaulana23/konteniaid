@@ -72,7 +72,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
 
         <button
             onClick={handlePaymentConfirmation}
-            className="w-full bg-brand-primary hover:bg-brand-secondary text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform duration-300 transform hover:scale-105"
+            className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105"
         >
             Saya Sudah Bayar
         </button>

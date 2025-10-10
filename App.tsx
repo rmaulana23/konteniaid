@@ -246,7 +246,7 @@ const App: React.FC = () => {
                           Sisa percobaan gratis: <strong>{Math.max(0, GUEST_LIMIT - guestGenerations)}</strong>
                       </div>
                   )}
-                  <button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full bg-brand-primary hover:bg-brand-secondary text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                  <button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
                     {isLoading ? <Spinner /> : 'Generate Ad Photo'}
                   </button>
                   {error && <p className="text-red-600 text-sm mt-2 text-center">{error}</p>}

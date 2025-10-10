@@ -19,14 +19,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
       <div className="py-12 sm:py-20">
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight">
           Bikin Foto Produk Biasa Menjadi
-          <span className="block text-brand-primary">Iklan Profesional Seketika</span>
+          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500">Iklan Profesional Seketika</span>
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-gray-600">
           Manfaatkan kekuatan AI untuk membuat foto iklan yang memukau, realistis, dan siap meningkatkan penjualan Anda tanpa perlu studio foto.
         </p>
         <button
           onClick={onStart}
-          className="mt-8 bg-brand-primary hover:bg-brand-secondary text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform duration-300 transform hover:scale-105"
+          className="mt-8 bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105"
         >
           Coba GRATIS Sekarang
         </button>
@@ -91,7 +91,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         />
                     </div>
                     <div className="relative rounded-lg shadow-lg overflow-hidden group">
-                        <div className="absolute top-3 left-3 bg-brand-primary/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-primary/80 to-teal-500/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
                         <img 
                             src="https://i.imgur.com/SKT1ACY.jpg" 
                             alt="Minuman setelah diubah oleh AI menjadi iklan" 
@@ -114,7 +114,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         />
                     </div>
                     <div className="relative rounded-lg shadow-lg overflow-hidden group">
-                        <div className="absolute top-3 left-3 bg-brand-primary/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-primary/80 to-teal-500/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
                         <img 
                             src="https://i.imgur.com/Rp5JFFU.jpg" 
                             alt="Produk fashion setelah diubah oleh AI menjadi iklan" 
@@ -137,7 +137,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         />
                     </div>
                     <div className="relative rounded-lg shadow-lg overflow-hidden group">
-                        <div className="absolute top-3 left-3 bg-brand-primary/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
+                        <div className="absolute top-3 left-3 bg-gradient-to-r from-brand-primary/80 to-teal-500/80 backdrop-blur-sm text-white font-semibold py-1 px-4 rounded-full text-sm z-10">AFTER</div>
                         <img 
                             src="https://i.imgur.com/O8s6MRU.jpg" 
                             alt="Mobil setelah diubah oleh AI menjadi iklan" 
@@ -162,7 +162,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
             <p className="text-5xl font-extrabold text-gray-900 my-4">
                 Rp 129rb
             </p>
-            <p className="font-semibold text-brand-primary mb-6">Pembayaran Sekali Saja</p>
+            <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Pembayaran Sekali Saja</p>
             
             <ul className="space-y-3 text-left text-gray-700">
                 <li className="flex items-center gap-3">
@@ -185,7 +185,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
             
             <button
               onClick={onGetAccess}
-              className="mt-8 w-full bg-brand-primary hover:bg-brand-secondary text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform duration-300 transform hover:scale-105"
+              className="mt-8 w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105"
             >
               Dapatkan Akses Sekarang
             </button>

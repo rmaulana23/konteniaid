@@ -55,7 +55,7 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images }) => {
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center">
                 <button
                   onClick={(e) => handleDownload(e, image, index)}
-                  className="opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 transition-all duration-300 bg-brand-secondary text-white px-4 py-2 rounded-full flex items-center gap-2 font-semibold"
+                  className="opacity-0 group-hover:opacity-100 transform group-hover:scale-100 scale-90 transition-all duration-300 bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white px-4 py-2 rounded-full flex items-center gap-2 font-semibold"
                   aria-label={`Unduh gambar ${index + 1}`}
                 >
                   <DownloadIcon />

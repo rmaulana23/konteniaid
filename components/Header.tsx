@@ -7,7 +7,7 @@ interface HeaderProps {
 
 const LogoIcon = () => (
   <img 
-    src="https://imgur.com/35sfGjw.jpg" 
+    src="https://imgur.com/dHfPxuQ.jpg" 
     alt="Kontenia Logo" 
     className="w-12 h-12 rounded-full object-cover" 
   />
