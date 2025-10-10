@@ -3,9 +3,9 @@ import { PRODUCT_CATEGORIES } from '../constants';
 import { ProductCategory } from '../types';
 
 const EMOJIS: Record<ProductCategory, string> = {
-    'food_beverage': '🍔',
-    'fashion_lifestyle': '👕',
-    'automotive': '🚗',
+    'food_beverage': '🍫',
+    'fashion_lifestyle': '🛍️',
+    'automotive': '🚘',
 };
 
 const DESCRIPTIONS: Record<ProductCategory, string> = {

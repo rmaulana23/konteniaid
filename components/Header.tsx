@@ -3,11 +3,12 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   onGoHome: () => void;
+  isTrialOver?: boolean;
 }
 
 const LogoIcon = () => (
   <img 
-    src="https://imgur.com/dHfPxuQ.jpg" 
+    src="https://imgur.com/R7KbsF0.jpg" 
     alt="Kontenia Logo" 
     className="w-12 h-12 rounded-full object-cover" 
   />
@@ -32,19 +33,20 @@ const GoogleIcon = () => (
 );
 
 
-const Header: React.FC<HeaderProps> = ({ onGoHome }) => {
+const Header: React.FC<HeaderProps> = ({ onGoHome, isTrialOver }) => {
   const { user, login, logout } = useAuth();
 
   return (
-    <header className="py-4 px-4 sm:px-6 lg:px-8 border-b border-gray-200 bg-white">
-      <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between max-w-7xl">
+    <header className="container mx-auto max-w-7xl mt-4 py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between">
         <button
           onClick={onGoHome}
-          className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary rounded-lg"
+          disabled={isTrialOver}
+          className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-secondary focus:ring-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Kembali ke halaman utama"
         >
           <LogoIcon />
-          <h1 className="text-3xl font-bold text-gray-900 group-hover:text-brand-primary transition-colors">Kontenia</h1>
+          <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
         </button>
         <div className="mt-2 sm:mt-0">
           {/* Login functionality is temporarily hidden. */}

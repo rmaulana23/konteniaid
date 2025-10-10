@@ -6,7 +6,7 @@ interface TermsModalProps {
 }
 
 const CloseIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
 );
 
 const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
@@ -50,49 +50,58 @@ const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose }) => {
         >
           <CloseIcon />
         </button>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Syarat & Ketentuan Penggunaan</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Syarat & Ketentuan Penggunaan Kontenia</h2>
         <p className="text-xs text-gray-500 mb-6">Terakhir diperbarui: 9/10/2025</p>
         
         <div className="space-y-4 text-sm">
-            <p>Selamat datang di Kontenia, platform berbasis kecerdasan buatan (AI) yang membantu Anda membuat iklan produk profesional secara instan.</p>
-            <p>Dengan menggunakan layanan ini, Anda menyetujui Syarat & Ketentuan berikut. Mohon dibaca dengan seksama sebelum menggunakan layanan kami.</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">1. Ketentuan Umum</h3>
+            <p>Selamat datang di Kontenia. Dengan mengakses dan menggunakan layanan kami, Anda dianggap telah membaca, memahami, dan menyetujui seluruh Syarat & Ketentuan ini.</p>
+            <p>Layanan Kontenia ditujukan untuk pengguna individu yang ingin membuat konten visual menggunakan teknologi AI, tanpa perlu membuat akun atau login.</p>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">1. Penerimaan Syarat</h3>
-            <p>Dengan mengakses atau menggunakan Kontenia, Anda dianggap telah membaca, memahami, dan menyetujui seluruh isi dari Syarat & Ketentuan ini. Jika Anda tidak menyetujui sebagian atau seluruhnya, harap tidak menggunakan layanan kami.</p>
-
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">2. Login & Akses Pengguna</h3>
-            <p>Akses layanan hanya dapat dilakukan dengan login menggunakan akun Google. Kami tidak menyimpan kata sandi atau data sensitif dari akun Google Anda. Login ini hanya digunakan untuk keperluan autentikasi, pencatatan batas penggunaan harian, dan menjaga keamanan akun Anda di platform kami.</p>
-            
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">3. Batasan Penggunaan (Quota)</h3>
-            <p>Setiap pengguna memiliki batas generate gambar sebanyak 50 kali per hari selama masa Early Access. Kuota akan otomatis diperbarui setiap hari pukul 00:00 WIB. Penggunaan melebihi batas akan ditolak hingga kuota diperbarui kembali. Kami berhak menyesuaikan jumlah kuota kapan saja tanpa pemberitahuan sebelumnya.</p>
-            
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">4. Konten & Hak Cipta</h3>
-            <p>Semua gambar yang dihasilkan oleh sistem AI bersifat otomatis dan tidak dijamin 100% unik. Pengguna bertanggung jawab penuh atas konten yang diunggah dan hasil yang dihasilkan dari layanan ini. Dilarang menggunakan layanan ini untuk membuat atau menyebarkan konten yang melanggar hukum, termasuk namun tidak terbatas pada:</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">2. Akses dan Penggunaan</h3>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>Pornografi, kekerasan, diskriminasi, ujaran kebencian, atau SARA.</li>
-                <li>Pelanggaran merek dagang, hak cipta, atau identitas pihak lain.</li>
+                <li>Akses ke fitur AI generator diberikan setelah pembayaran satu kali (one-time payment).</li>
+                <li>Pengguna akan menerima kode akses unik untuk menggunakan fitur selama periode tertentu atau hingga batas penggunaan habis (sesuai paket yang dibeli).</li>
+                <li>Kode akses tidak dapat dipindahtangankan atau digunakan oleh lebih dari satu orang dalam waktu bersamaan.</li>
+                <li>Kontenia berhak menonaktifkan kode akses jika terdeteksi penyalahgunaan, pelanggaran, atau penggunaan berlebihan yang melanggar kebijakan sistem.</li>
             </ul>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">5. Privasi & Keamanan Data</h3>
-            <p>Kami hanya mengumpulkan data minimal: email Google dan ID unik pengguna. Data ini digunakan semata-mata untuk:</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">3. Batasan Penggunaan AI</h3>
             <ul className="list-disc pl-5 space-y-1 mt-2">
-                <li>Mengelola kuota harian,</li>
-                <li>Menyimpan histori penggunaan,</li>
-                <li>Menjaga keamanan sistem.</li>
+                <li>Setiap pengguna memiliki batas jumlah generate sesuai paket yang dibeli.</li>
+                <li>Hasil generate dapat berbeda-beda tergantung prompt, model AI, dan kondisi sistem.</li>
+                <li>Kontenia tidak menjamin hasil gambar akan selalu sempurna atau sesuai ekspektasi pengguna.</li>
+                <li>Dilarang menggunakan layanan untuk membuat konten yang bersifat:
+                    <ul className="list-circle pl-5 mt-1">
+                        <li>Pornografi, kekerasan, kebencian, diskriminasi, atau pelanggaran hukum.</li>
+                        <li>Pelanggaran hak cipta, merek dagang, atau hak pribadi pihak lain.</li>
+                    </ul>
+                </li>
             </ul>
-            <p>Kami tidak menjual atau membagikan data pengguna kepada pihak ketiga. Layanan ini menggunakan sistem Supabase dan Google API yang sudah memiliki standar keamanan industri.</p>
+            
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">4. Pembayaran dan Kebijakan Refund</h3>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li>Pembayaran bersifat final dan tidak dapat dikembalikan (non-refundable), kecuali ada kesalahan teknis yang terbukti berasal dari sistem Kontenia.</li>
+                <li>Semua transaksi dilakukan secara aman melalui penyedia pembayaran resmi.</li>
+            </ul>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">6. Ketersediaan & Perubahan Layanan</h3>
-            <p>Layanan ini masih dalam tahap Early Access dan dapat mengalami pembaruan, perbaikan, atau gangguan sewaktu-waktu. Kami berhak menambah, menghapus, atau memodifikasi fitur tanpa pemberitahuan sebelumnya.</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">5. Kepemilikan dan Hak Cipta</h3>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li>Hasil gambar yang dihasilkan melalui Kontenia menjadi milik pengguna sepenuhnya, kecuali digunakan untuk tujuan ilegal atau melanggar hukum.</li>
+                <li>Namun, Kontenia berhak menggunakan hasil generate anonim untuk keperluan promosi atau pengembangan sistem (tanpa mencantumkan data pribadi pengguna).</li>
+            </ul>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">7. Penolakan Tanggung Jawab</h3>
-            <p>Kontenia tidak bertanggung jawab atas hasil visual yang tidak sesuai dengan ekspektasi pengguna. Semua hasil adalah keluaran otomatis dari sistem AI yang bersifat eksperimental. Pengguna wajib memastikan hasil akhir sesuai dengan standar hukum dan etika yang berlaku.</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">6. Pembatasan Tanggung Jawab</h3>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li>Kontenia tidak bertanggung jawab atas kerugian langsung maupun tidak langsung akibat penggunaan layanan.</li>
+                <li>Pengguna sepenuhnya bertanggung jawab atas konten yang dihasilkan dan penggunaannya.</li>
+            </ul>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">8. Perubahan Syarat & Ketentuan</h3>
-            <p>Kami dapat memperbarui Syarat & Ketentuan ini sewaktu-waktu. Versi terbaru akan ditampilkan di situs, dan tanggal pembaruan akan disertakan di bagian atas dokumen.</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">7. Perubahan dan Pembaruan</h3>
+            <p>Syarat & Ketentuan ini dapat berubah sewaktu-waktu tanpa pemberitahuan sebelumnya. Pengguna disarankan untuk memeriksa halaman ini secara berkala.</p>
 
-            <h3 className="text-lg font-semibold text-gray-900 pt-4">9. Kontak</h3>
-            <p>Untuk pertanyaan, laporan, atau masukan, Anda dapat menghubungi kami melalui:<br/>📧 aikistudio@gmail.com</p>
+            <h3 className="text-lg font-semibold text-gray-900 pt-4">8. Kontak</h3>
+            <p>Untuk pertanyaan atau bantuan, hubungi kami melalui email resmi Kami di timkontenia@gmail.com.</p>
         </div>
       </div>
     </div>

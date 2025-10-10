@@ -7,10 +7,11 @@ import Spinner from './components/Spinner';
 import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import PaymentModal from './components/PaymentModal';
-import CategorySelectorPage from './components/CategorySelectorPage'; // Import new component
+import CategorySelectorPage from './components/CategorySelectorPage';
+import AccessCodeModal from './components/AccessCodeModal'; // Import new component
 import { useAuth } from './contexts/AuthContext';
 import { generateAdPhotos } from './services/geminiService';
-import { PRODUCT_CATEGORIES, AD_STYLES, VARIATION_OPTIONS, FASHION_AD_STYLES, MODEL_GENDER_OPTIONS, AUTOMOTIVE_AD_STYLES, AUTOMOTIVE_MODIFICATION_OPTIONS, CAR_COLOR_OPTIONS, VEHICLE_TYPE_OPTIONS, COLOR_TONE_OPTIONS } from './constants';
+import { PRODUCT_CATEGORIES, AD_STYLES, VARIATION_OPTIONS, FASHION_AD_STYLES, MODEL_GENDER_OPTIONS, AUTOMOTIVE_AD_STYLES, AUTOMOTIVE_MODIFICATION_OPTIONS, CAR_COLOR_OPTIONS, VEHICLE_TYPE_OPTIONS, COLOR_TONE_OPTIONS, ACCESS_CODES } from './constants';
 import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone } from './types';
 
 type View = 'landing' | 'category_selection' | 'tool';
@@ -24,9 +25,15 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
+  // Access Code Modal State
+  const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
+  const [categoryToUnlock, setCategoryToUnlock] = useState<ProductCategory | null>(null);
+  const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
+
   // New robust guest tracking
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [guestGenerations, setGuestGenerations] = useState<number>(0);
+  const [isTrialOver, setIsTrialOver] = useState(false);
   
   const GUEST_LIMIT = 3;
 
@@ -45,6 +52,7 @@ const App: React.FC = () => {
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Initialize or retrieve the unique device ID
@@ -61,6 +69,15 @@ const App: React.FC = () => {
     const currentCount = usageData[id] || 0;
     setGuestGenerations(currentCount);
   }, []);
+
+  useEffect(() => {
+    // Determine if the guest's trial is over
+    if (!user && guestGenerations >= GUEST_LIMIT) {
+        setIsTrialOver(true);
+    } else {
+        setIsTrialOver(false);
+    }
+  }, [user, guestGenerations]);
 
   const getAdStyleOptions = () => {
     switch (productCategory) {
@@ -91,19 +108,51 @@ const App: React.FC = () => {
     setUploadedImage(file);
     setUploadedImagePreview(URL.createObjectURL(file));
     setError(null);
+    setInfoMessage(null);
     setGeneratedImages([]);
   };
 
   const handleGetAccess = () => {
-    if (!user) {
-        login();
-    }
     setIsPaymentModalOpen(true);
   };
   
   const handleCategorySelect = (category: ProductCategory) => {
-    setProductCategory(category);
-    setCurrentView('tool');
+    if (isTrialOver) {
+      // If trial is over, user must provide an access code.
+      setCategoryToUnlock(category);
+      setIsAccessCodeModalOpen(true);
+      setAccessCodeError(null);
+    } else {
+      // During trial, grant direct access to the tool.
+      setProductCategory(category);
+      setCurrentView('tool');
+    }
+  };
+
+  const handleAccessCodeSubmit = (code: string) => {
+    if (categoryToUnlock && code.toLowerCase() === ACCESS_CODES[categoryToUnlock]) {
+        setProductCategory(categoryToUnlock);
+        setCurrentView('tool');
+        setIsAccessCodeModalOpen(false);
+        setCategoryToUnlock(null);
+        setAccessCodeError(null);
+        // Reset guest counter on successful code entry, as this is proof of access
+        if (deviceId) {
+            const usageDataStr = localStorage.getItem('guestUsageData');
+            const usageData = usageDataStr ? JSON.parse(usageDataStr) : {};
+            usageData[deviceId] = 0;
+            localStorage.setItem('guestUsageData', JSON.stringify(usageData));
+            setGuestGenerations(0);
+        }
+    } else {
+        setAccessCodeError('Kode akses salah. Silakan coba lagi.');
+    }
+  };
+  
+  const handleSuccessfulPayment = () => {
+    setIsPaymentModalOpen(false);
+    setError(null);
+    setInfoMessage("Silakan kirim bukti transfer Anda via WhatsApp. Kode akses akan dikirimkan setelah pembayaran diverifikasi.");
   };
 
   const handleBackToCategorySelect = () => {
@@ -112,6 +161,7 @@ const App: React.FC = () => {
     setUploadedImagePreview(null);
     setGeneratedImages([]);
     setError(null);
+    setInfoMessage(null);
     setColorTone('natural');
   };
 
@@ -132,6 +182,7 @@ const App: React.FC = () => {
     setVariations(1);
     setGeneratedImages([]);
     setError(null);
+    setInfoMessage(null);
   };
 
   const handleGenerate = async () => {
@@ -140,19 +191,22 @@ const App: React.FC = () => {
       return;
     }
 
-    if (!user) { // Guest user
-        if (guestGenerations >= GUEST_LIMIT) {
-            setError(`Anda telah mencapai batas percobaan gratis (${GUEST_LIMIT}x). Silakan login dan bayar untuk melanjutkan.`);
-            return;
-        }
-    } else if (!user.paid) { // Logged-in, but not paid user
+    setInfoMessage(null);
+    setError(null);
+
+    if (isTrialOver) {
+        setError('Batas percobaan gratis Anda telah habis. Silakan lakukan pembayaran untuk melanjutkan.');
+        setIsPaymentModalOpen(true);
+        return;
+    }
+    
+    if (user && !user.paid) {
         setError('Akun Anda belum memiliki akses penuh. Silakan selesaikan pembayaran.');
         setIsPaymentModalOpen(true);
         return;
     }
 
     setIsLoading(true);
-    setError(null);
     setGeneratedImages([]);
 
     try {
@@ -175,6 +229,10 @@ const App: React.FC = () => {
         usageData[deviceId] = newCount;
         localStorage.setItem('guestUsageData', JSON.stringify(usageData));
         setGuestGenerations(newCount);
+        
+        if (newCount >= GUEST_LIMIT) {
+           setError('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan lakukan pembayaran.');
+        }
       }
 
     } catch (err: any) {
@@ -203,7 +261,7 @@ const App: React.FC = () => {
     return 0;
   };
 
-  const isGenerateDisabled = isLoading || !uploadedImage || (!user && guestGenerations >= GUEST_LIMIT) || (!!user && !user.paid);
+  const isGenerateDisabled = isLoading || !uploadedImage;
 
   const renderView = () => {
     switch(currentView) {
@@ -215,9 +273,13 @@ const App: React.FC = () => {
         return (
           <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 bg-white p-5 rounded-lg shadow-md h-fit">
+              <div className="lg:col-span-1 bg-white p-5 rounded-lg shadow-md h-fit border border-gray-200">
                 <div className="space-y-5">
-                   <button onClick={handleBackToCategorySelect} className="w-full text-sm text-gray-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 bg-gray-100 hover:bg-gray-200">
+                   <button 
+                    onClick={handleBackToCategorySelect} 
+                    disabled={isTrialOver}
+                    className="w-full text-sm text-gray-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+                   >
                       <BackIcon /> Ganti Kategori
                    </button>
                   <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
@@ -250,11 +312,12 @@ const App: React.FC = () => {
                     {isLoading ? <Spinner /> : 'Generate Ad Photo'}
                   </button>
                   {error && <p className="text-red-600 text-sm mt-2 text-center">{error}</p>}
+                  {infoMessage && <p className="text-green-600 text-sm mt-2 text-center">{infoMessage}</p>}
                 </div>
               </div>
               <div className="lg:col-span-2">
                 {isLoading && (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md min-h-[400px]">
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md min-h-[400px] border border-gray-200">
                       <svg className="animate-spin h-10 w-10 text-brand-secondary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                       <p className="text-gray-700 font-semibold">AI sedang bekerja... </p>
                       <p className="text-gray-500 text-sm">Proses ini bisa memakan waktu hingga 1 menit.</p>
@@ -262,7 +325,7 @@ const App: React.FC = () => {
                 )}
                 {!isLoading && generatedImages.length > 0 && (<ImageGrid images={generatedImages} />)}
                 {!isLoading && generatedImages.length === 0 && (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md text-center min-h-[400px]">
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md text-center min-h-[400px] border border-gray-200">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         <h3 className="text-xl font-semibold text-gray-700">Hasil Anda Akan Muncul di Sini</h3>
                         <p className="text-gray-500 mt-1">Upload foto dan atur pilihan Anda untuk memulai.</p>
@@ -278,10 +341,26 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header onGoHome={handleGoHome} />
+    <div className="min-h-screen flex flex-col bg-brand-background">
+      <Header onGoHome={handleGoHome} isTrialOver={isTrialOver} />
       {renderView()}
-      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} onSuccessfulPayment={purchase} />
+      <PaymentModal 
+        isOpen={isPaymentModalOpen}
+        onClose={() => {
+            if (!isTrialOver) {
+                setIsPaymentModalOpen(false)
+            }
+        }}
+        onSuccessfulPayment={handleSuccessfulPayment}
+        isBlocking={isTrialOver}
+      />
+      <AccessCodeModal 
+        isOpen={isAccessCodeModalOpen}
+        onClose={() => setIsAccessCodeModalOpen(false)}
+        onSubmit={handleAccessCodeSubmit}
+        categoryName={categoryToUnlock ? PRODUCT_CATEGORIES.find(c => c.value === categoryToUnlock)?.label || '' : ''}
+        error={accessCodeError}
+      />
       <Footer />
     </div>
   );
