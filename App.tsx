@@ -1,392 +1,358 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
+import Footer from './components/Footer';
+import LandingPage from './components/LandingPage';
+import CategorySelectorPage from './components/CategorySelectorPage';
 import ImageUploader from './components/ImageUploader';
 import OptionSelector from './components/OptionSelector';
 import ImageGrid from './components/ImageGrid';
 import Spinner from './components/Spinner';
-import Footer from './components/Footer';
-import LandingPage from './components/LandingPage';
 import PaymentModal from './components/PaymentModal';
-import CategorySelectorPage from './components/CategorySelectorPage';
-import Dashboard from './components/Dashboard'; // Import Dashboard
-import ProgressBar from './components/ProgressBar';
+import Dashboard from './components/Dashboard';
+
 import { useAuth } from './contexts/AuthContext';
-import { generateAdPhotos } from './services/geminiService';
 import { supabase } from './services/supabase';
-import { PRODUCT_CATEGORIES, AD_STYLES, VARIATION_OPTIONS, FASHION_AD_STYLES, MODEL_GENDER_OPTIONS, AUTOMOTIVE_AD_STYLES, AUTOMOTIVE_MODIFICATION_OPTIONS, CAR_COLOR_OPTIONS, VEHICLE_TYPE_OPTIONS, COLOR_TONE_OPTIONS } from './constants';
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone } from './types';
+import { generateAdPhotos } from './services/geminiService';
 
-type View = 'landing' | 'category_selection' | 'tool' | 'dashboard'; // Tambahkan 'dashboard'
+import {
+  ProductCategory,
+  AdStyle,
+  ModelGender,
+  AutomotiveModification,
+  CarColor,
+  VehicleType,
+  ColorTone,
+} from './types';
 
-const BackIcon = () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-);
+import {
+  PRODUCT_CATEGORIES,
+  AD_STYLES,
+  FASHION_AD_STYLES,
+  AUTOMOTIVE_AD_STYLES,
+  MODEL_GENDER_OPTIONS,
+  AUTOMOTIVE_MODIFICATION_OPTIONS,
+  CAR_COLOR_OPTIONS,
+  VEHICLE_TYPE_OPTIONS,
+  COLOR_TONE_OPTIONS,
+  VARIATION_OPTIONS,
+} from './constants';
+
+type Page = 'landing' | 'category' | 'generator' | 'dashboard';
 
 const App: React.FC = () => {
-  const { user, profile, setProfile, loading } = useAuth(); // Get setProfile
-  const [currentView, setCurrentView] = useState<View>('landing');
+  const { user, profile, setProfile, login, loading: authLoading } = useAuth();
+
+  // App State
+  const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
-  // Guest tracking now uses Supabase
-  const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [guestGenerations, setGuestGenerations] = useState<number>(0);
-  const [isTrialOver, setIsTrialOver] = useState(false);
-  
-  const GUEST_LIMIT = 3;
-
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  // Form State
+  const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
-  const [productCategory, setProductCategory] = useState<ProductCategory>('food_beverage');
   const [adStyle, setAdStyle] = useState<AdStyle>('indoor_studio');
+  const [variations, setVariations] = useState<number>(1);
   const [modelGender, setModelGender] = useState<ModelGender>('woman');
-  const [vehicleType, setVehicleType] = useState<VehicleType>('mobil');
   const [automotiveModification, setAutomotiveModification] = useState<AutomotiveModification>('none');
   const [carColor, setCarColor] = useState<CarColor>('original');
-  const [customCarColor, setCustomCarColor] = useState<string>('');
+  const [vehicleType, setVehicleType] = useState<VehicleType>('mobil');
   const [colorTone, setColorTone] = useState<ColorTone>('natural');
-  const [customPrompt, setCustomPrompt] = useState<string>('');
-  const [variations, setVariations] = useState<number>(1);
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [customCarColor, setCustomCarColor] = useState('');
+
+  // Generation State
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [infoMessage, setInfoMessage] = useState<string | null>(null);
+
+  const isTrialOver = useMemo(() => {
+    if (!profile) return false;
+    return !profile.is_paid && profile.generation_count >= profile.generation_limit;
+  }, [profile]);
 
   useEffect(() => {
-    let id = localStorage.getItem('deviceId');
-    if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem('deviceId', id);
-    }
-    setDeviceId(id);
-
-    const fetchGuestUsage = async (currentId: string) => {
-        const { data } = await supabase
-            .from('guest_usage')
-            .select('generation_count')
-            .eq('device_id', currentId)
-            .single();
-        
-        setGuestGenerations(data?.generation_count || 0);
-    };
-    
-    if (id && !user) { // Only fetch guest usage if not logged in
-        fetchGuestUsage(id);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    // Determine if the guest's trial is over
-    if (!user && guestGenerations >= GUEST_LIMIT) {
-        setIsTrialOver(true);
+    if (authLoading) return;
+    if (user && profile) {
+      if (page === 'landing') {
+        setPage('category');
+      }
     } else {
-        setIsTrialOver(false);
+      setPage('landing');
+      resetGeneratorState();
     }
-  }, [user, guestGenerations]);
-
-  const getAdStyleOptions = () => {
-    switch (productCategory) {
-      case 'fashion_lifestyle':
-        return FASHION_AD_STYLES;
-      case 'automotive':
-        if (vehicleType === 'motor') {
-            return AUTOMOTIVE_AD_STYLES.filter(style => style.value !== 'japanese_drifting');
-        }
-        return AUTOMOTIVE_AD_STYLES;
-      default:
-        return AD_STYLES;
-    }
-  };
-
-  const adStyleOptions = getAdStyleOptions();
-  const isFashionCategory = productCategory === 'fashion_lifestyle';
-  const isAutomotiveCategory = productCategory === 'automotive';
-  const isFoodCategory = productCategory === 'food_beverage';
-
-  useEffect(() => {
-    if (!adStyleOptions.some(opt => opt.value === adStyle)) {
-      setAdStyle(adStyleOptions[0].value);
-    }
-  }, [productCategory, vehicleType, adStyle, adStyleOptions]);
-
-  const handleImageUpload = (file: File) => {
-    setUploadedImage(file);
-    setUploadedImagePreview(URL.createObjectURL(file));
-    setError(null);
-    setInfoMessage(null);
-    setGeneratedImages([]);
-  };
-
-  const handleGetAccess = () => {
-    setIsPaymentModalOpen(true);
-  };
+  }, [user, profile, authLoading, page]);
   
-  const handleCategorySelect = (category: ProductCategory) => {
-    setProductCategory(category);
-    setCurrentView('tool');
-  };
-  
-  const handleSuccessfulPayment = () => {
-    setIsPaymentModalOpen(false);
-    setError(null);
-    setInfoMessage("Silakan kirim bukti transfer Anda via WhatsApp. Akses akan diaktifkan di akun Anda setelah pembayaran diverifikasi.");
-  };
-
-  const handleBackToCategorySelect = () => {
-    setCurrentView('category_selection');
-    setUploadedImage(null);
+  const resetGeneratorState = () => {
+    setSelectedCategory(null);
+    setImageFile(null);
     setUploadedImagePreview(null);
-    setGeneratedImages([]);
-    setError(null);
-    setInfoMessage(null);
-    setColorTone('natural');
-  };
-
-  const resetToolState = () => {
-    setUploadedImage(null);
-    setUploadedImagePreview(null);
-    setProductCategory('food_beverage');
     setAdStyle('indoor_studio');
-    setModelGender('woman');
-    setVehicleType('mobil');
-    setAutomotiveModification('none');
-    setCarColor('original');
-    setCustomCarColor('');
-    setColorTone('natural');
-    setCustomPrompt('');
     setVariations(1);
     setGeneratedImages([]);
     setError(null);
-    setInfoMessage(null);
+    // Reset category-specific states
+    setModelGender('woman');
+    setAutomotiveModification('none');
+    setCarColor('original');
+    setVehicleType('mobil');
+    setColorTone('natural');
+    setCustomPrompt('');
+    setCustomCarColor('');
   };
 
   const handleGoHome = () => {
-    setCurrentView('landing');
-    resetToolState();
-  };
-  
-  const handleGoDashboard = () => {
-      if(profile?.is_admin) {
-        setCurrentView('dashboard');
-        resetToolState();
-      }
+    resetGeneratorState();
+    setPage('category');
   };
 
-  const handleGenerate = async () => {
-    if (!uploadedImage) {
-      setError('Silakan upload foto produk terlebih dahulu.');
+  const handleStart = () => {
+    if (user) {
+      setPage('category');
+    } else {
+      login();
+    }
+  };
+  
+  const handleSelectCategory = (category: ProductCategory) => {
+    setSelectedCategory(category);
+    // Reset style to a default valid for all, then let specific logic handle it
+    setAdStyle('indoor_studio'); 
+    setPage('generator');
+  };
+
+  const handleImageUpload = (file: File) => {
+    setImageFile(file);
+    const previewUrl = URL.createObjectURL(file);
+    setUploadedImagePreview(previewUrl);
+  };
+
+  const handleGenerateClick = async () => {
+    if (!imageFile || !selectedCategory) {
+      setError('Silakan upload foto produk dan pilih kategori terlebih dahulu.');
       return;
     }
 
-    setInfoMessage(null);
-    setError(null);
-
-    // Cek kuota untuk tamu di frontend untuk feedback cepat
-    if (!user) {
-        const remainingGenerations = GUEST_LIMIT - guestGenerations;
-        if (variations > remainingGenerations) {
-            setError(`Kuota percobaan gratis Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi, login, atau lakukan pembayaran.`);
-            setIsPaymentModalOpen(true);
-            return;
-        }
+    if (isTrialOver) {
+      setIsPaymentModalOpen(true);
+      return;
     }
-    
-    // Untuk pengguna login, pengecekan kuota akan dilakukan oleh fungsi database
-    // untuk memastikan logika reset harian diterapkan dengan benar.
 
     setIsLoading(true);
+    setError(null);
     setGeneratedImages([]);
 
     try {
-      const images = await generateAdPhotos(
-          uploadedImage, productCategory, adStyle, variations, 
-          isFashionCategory ? modelGender : undefined,
-          isAutomotiveCategory ? automotiveModification : undefined,
-          isAutomotiveCategory ? carColor : undefined,
-          isAutomotiveCategory ? vehicleType : undefined,
-          customPrompt,
-          isAutomotiveCategory && carColor === 'custom' ? customCarColor : undefined,
-          isFoodCategory ? colorTone : undefined
+      const newImages = await generateAdPhotos(
+        imageFile,
+        selectedCategory,
+        adStyle,
+        variations,
+        modelGender,
+        automotiveModification,
+        carColor,
+        vehicleType,
+        customPrompt,
+        customCarColor,
+        colorTone
       );
-      setGeneratedImages(images);
-      
-      if (user && profile) {
-          // Panggil fungsi RPC yang cerdas di database
-          const { data: updatedProfile, error: rpcError } = await supabase
-            .rpc('increment_and_reset_count', { generation_amount: variations })
-            .single();
+      setGeneratedImages(newImages);
 
-          if (rpcError) {
-             console.error('Gagal update kuota via RPC:', rpcError);
-             if (rpcError.message.includes('insufficient_quota')) {
-                 const errorMessage = profile.is_paid
-                    ? `Kuota harian Anda tidak cukup. Kuota akan direset besok.`
-                    : `Kuota percobaan Anda tidak cukup. Silakan selesaikan pembayaran untuk mendapatkan 100 kuota harian.`;
-                 setError(errorMessage);
-                 if (!profile.is_paid) {
-                    setIsPaymentModalOpen(true);
-                 }
-             } else {
-                 setError('Gagal menyimpan progres Anda. Coba lagi.');
-             }
-          } else if (updatedProfile) {
-             setProfile(updatedProfile); // Update state dengan profil terbaru dari database
-          }
+      // Update generation count
+      if (profile && !profile.is_admin) {
+        const newCount = profile.generation_count + variations;
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ generation_count: newCount })
+          .eq('id', profile.id);
 
-      } else if (deviceId) {
-        const newCount = guestGenerations + variations;
-        const { error: upsertError } = await supabase
-          .from('guest_usage')
-          .upsert({ device_id: deviceId, generation_count: newCount });
-
-        if (upsertError) {
-            console.error('Gagal update penggunaan tamu:', upsertError);
-        }
-        setGuestGenerations(newCount);
-        
-        if (newCount >= GUEST_LIMIT) {
-           setInfoMessage('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan login.');
+        if (updateError) {
+          console.error("Failed to update generation count:", updateError);
+          // Don't block user, but log it
+        } else {
+          // Optimistically update local profile state
+          setProfile({ ...profile, generation_count: newCount });
         }
       }
-
-    } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan yang tidak diketahui.');
+    } catch (e: any) {
+      setError(e.message || 'Terjadi kesalahan yang tidak diketahui.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const adStyleOptions = useMemo(() => {
+    switch (selectedCategory) {
+      case 'fashion_lifestyle': return FASHION_AD_STYLES;
+      case 'automotive': return AUTOMOTIVE_AD_STYLES;
+      case 'food_beverage': return AD_STYLES;
+      default: return [];
+    }
+  }, [selectedCategory]);
 
-  const getStepNumber = (step: 'style' | 'vehicle' | 'mod' | 'color' | 'model' | 'color_tone' | 'custom' | 'variation') => {
-    // Step 1 is always Upload, so we start numbering from 2
-    if (isAutomotiveCategory) {
-      switch (step) {
-        case 'vehicle': return 2; case 'style': return 3; case 'mod': return 4; case 'color': return 5; case 'custom': return 6; case 'variation': return 7;
+  useEffect(() => {
+      if (adStyleOptions.length > 0 && !adStyleOptions.find(opt => opt.value === adStyle)) {
+          setAdStyle(adStyleOptions[0].value);
       }
+  }, [adStyle, adStyleOptions]);
+
+  const renderGeneratorForm = () => {
+    if (!selectedCategory) return null;
+
+    const categoryInfo = PRODUCT_CATEGORIES.find(c => c.value === selectedCategory);
+
+    return (
+      <div className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
+        <button
+          onClick={() => {
+            resetGeneratorState();
+            setPage('category');
+          }}
+          className="text-sm font-semibold text-brand-secondary hover:text-brand-primary mb-6 flex items-center gap-2"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+          Kembali & Ganti Kategori
+        </button>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Buat Foto Iklan untuk <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500">{categoryInfo?.label}</span></h1>
+        <p className="text-gray-600 mb-8">Upload foto produk Anda dan pilih opsi di bawah untuk memulai.</p>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Left Column: Options */}
+          <div className="lg:col-span-1 space-y-6 bg-gray-50 p-6 rounded-lg border">
+            <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
+            
+            <OptionSelector title="2. Pilih Gaya Iklan" options={adStyleOptions} selectedValue={adStyle} onValueChange={setAdStyle} />
+
+            {selectedCategory === 'fashion_lifestyle' && (
+              <OptionSelector title="Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={setModelGender} />
+            )}
+
+            {selectedCategory === 'automotive' && (
+              <>
+                <OptionSelector title="Jenis Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={setVehicleType} />
+                <OptionSelector title="Pilih Modifikasi" options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={setAutomotiveModification} />
+                <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={setCarColor} />
+                {carColor === 'custom' && (
+                    <div>
+                        <label htmlFor="custom-car-color" className="block text-sm font-medium text-gray-700 mb-1">Tulis Warna Custom</label>
+                        <input
+                            type="text"
+                            id="custom-car-color"
+                            value={customCarColor}
+                            onChange={(e) => setCustomCarColor(e.target.value)}
+                            className="w-full bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg focus:outline-none focus:border-brand-secondary focus:ring-1 focus:ring-brand-secondary/50"
+                            placeholder="e.g., bunglon ungu-hijau"
+                        />
+                    </div>
+                )}
+              </>
+            )}
+
+            {selectedCategory === 'food_beverage' && (
+                <OptionSelector title="Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={setColorTone} />
+            )}
+
+            <OptionSelector title="3. Jumlah Variasi" options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={setVariations} />
+
+             <div>
+                <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">4. (Opsional) Instruksi Tambahan</label>
+                <textarea
+                    id="custom-prompt"
+                    rows={3}
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="w-full appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors"
+                    placeholder="Contoh: tambahkan latar belakang pantai"
+                />
+             </div>
+
+            <button
+              onClick={handleGenerateClick}
+              disabled={isLoading || !imageFile || isTrialOver}
+              className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+            >
+              {isLoading ? (
+                <>
+                  <Spinner />
+                  Membuat Foto...
+                </>
+              ) : (
+                'Generate Foto Iklan'
+              )}
+            </button>
+            {isTrialOver && <p className="text-center text-sm text-red-600 mt-2">Sisa generate gratis Anda habis. Silakan upgrade untuk melanjutkan.</p>}
+          </div>
+
+          {/* Right Column: Results */}
+          <div className="lg:col-span-2">
+            {isLoading && (
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border h-full min-h-[300px]">
+                <Spinner />
+                <p className="mt-4 text-gray-700 font-semibold">AI sedang bekerja, mohon tunggu...</p>
+                <p className="mt-1 text-sm text-gray-500">Proses ini bisa memakan waktu hingga 1 menit.</p>
+              </div>
+            )}
+            {error && (
+              <div className="p-4 bg-red-100 border border-red-300 text-red-800 rounded-lg">
+                <p className="font-semibold">Oops, terjadi kesalahan!</p>
+                <p>{error}</p>
+              </div>
+            )}
+            {!isLoading && generatedImages.length > 0 && <ImageGrid images={generatedImages} />}
+            {!isLoading && generatedImages.length === 0 && !error && (
+              <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg border-2 border-dashed h-full min-h-[300px]">
+                <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <p className="mt-4 text-gray-500 font-semibold">Hasil foto iklan Anda akan muncul di sini</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  const renderPage = () => {
+    if (authLoading) {
+      return (
+        <div className="flex-grow flex items-center justify-center">
+            <svg className="animate-spin h-10 w-10 text-brand-secondary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        </div>
+      );
     }
-    if (isFashionCategory) {
-      switch (step) {
-        case 'style': return 2; case 'model': return 3; case 'custom': return 4; case 'variation': return 5;
-      }
+    
+    switch (page) {
+      case 'dashboard':
+        return profile?.is_admin ? <Dashboard /> : <CategorySelectorPage onSelectCategory={handleSelectCategory} />;
+      case 'generator':
+        return renderGeneratorForm();
+      case 'category':
+        return <CategorySelectorPage onSelectCategory={handleSelectCategory} />;
+      case 'landing':
+      default:
+        return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} />;
     }
-    // Food category is the default
-    switch (step) {
-        case 'style': return 2; case 'color_tone': return 3; case 'custom': return 4; case 'variation': return 5;
-    }
-    return 0;
   };
 
-  const isGenerateDisabled = isLoading || !uploadedImage;
-  
-  if (loading) {
-    return (
-        <div className="min-h-screen flex flex-col bg-brand-background">
-            <Header onGoHome={handleGoHome} onGoDashboard={handleGoDashboard} />
-            <div className="flex-grow flex items-center justify-center">
-                 <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md min-h-[400px] border border-gray-200">
-                    <svg className="animate-spin h-10 w-10 text-brand-secondary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <p className="text-gray-700 font-semibold">Memuat Sesi...</p>
-                </div>
-            </div>
-            <Footer />
-        </div>
-    );
-  }
-
-  const renderView = () => {
-    switch(currentView) {
-      case 'landing':
-        return <LandingPage onStart={() => setCurrentView('category_selection')} onGetAccess={handleGetAccess} />;
-      case 'category_selection':
-        return <CategorySelectorPage onSelectCategory={handleCategorySelect} />;
-      case 'dashboard':
-        // Melindungi route dashboard
-        return profile?.is_admin ? <Dashboard /> : <LandingPage onStart={() => setCurrentView('category_selection')} onGetAccess={handleGetAccess} />;
-      case 'tool':
-        return (
-          <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1 bg-white p-5 rounded-lg shadow-md h-fit border border-gray-200">
-                <div className="space-y-5">
-                   <button 
-                    onClick={handleBackToCategorySelect} 
-                    className="w-full text-sm text-gray-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 bg-gray-100 hover:bg-gray-200"
-                   >
-                      <BackIcon /> Ganti Kategori
-                   </button>
-                  <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
-                  {isAutomotiveCategory && (<OptionSelector title={`${getStepNumber('vehicle')}. Pilih Jenis Kendaraan`} options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(value) => setVehicleType(value as VehicleType)} />)}
-                  <OptionSelector title={`${getStepNumber('style')}. Pilih Gaya Iklan`} options={adStyleOptions} selectedValue={adStyle} onValueChange={(value) => setAdStyle(value as AdStyle)} />
-                  {isFoodCategory && (<OptionSelector title={`${getStepNumber('color_tone')}. Pilih Color Tone`} options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(value) => setColorTone(value as ColorTone)} />)}
-                  {isAutomotiveCategory && (
-                    <>
-                        <OptionSelector title={`${getStepNumber('mod')}. Pilih Modifikasi (Special)`} options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(value) => setAutomotiveModification(value as AutomotiveModification)} />
-                        <OptionSelector title={`${getStepNumber('color')}. Pilih Warna`} options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={(value) => setCarColor(value as CarColor)} />
-                        {carColor === 'custom' && (
-                          <div className="w-full -mt-3">
-                              <input type="text" value={customCarColor} onChange={(e) => setCustomCarColor(e.target.value)} placeholder="Contoh: bunglon 3 warna, hijau tosca" className="w-full bg-white border border-gray-300 text-gray-900 py-3 px-4 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors" aria-label="Custom Car Color Input" />
-                          </div>
-                        )}
-                    </>
-                  )}
-                  {isFashionCategory && (<OptionSelector title={`${getStepNumber('model')}. Pilih Model`} options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(value) => setModelGender(value as ModelGender)} />)}
-                  <div className="w-full">
-                      <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">{getStepNumber('custom')}. Custom Prompt (Opsional)</label>
-                      <textarea id="custom-prompt" value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)} placeholder="tambahkan efek tertentu" className="w-full bg-white border border-gray-300 text-gray-900 py-3 px-4 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors" rows={3} aria-label="Custom Prompt (Opsional)" />
-                  </div>
-                  <OptionSelector title={`${getStepNumber('variation')}. Jumlah Variasi`} options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={(value) => setVariations(value as number)} />
-                  {user && profile && (
-                    <div className="w-full">
-                      <p className="text-center text-sm text-gray-600 mb-1">Kuota Tersisa:</p>
-                      <ProgressBar value={profile.generation_count} limit={profile.generation_limit} />
-                    </div>
-                  )}
-                  {!user && (
-                      <div className="text-center text-sm text-gray-600 bg-gray-100 p-3 rounded-md">
-                          Sisa percobaan gratis: <strong>{Math.max(0, GUEST_LIMIT - guestGenerations)}</strong>
-                      </div>
-                  )}
-                  <button onClick={handleGenerate} disabled={isGenerateDisabled} className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                    {isLoading ? <Spinner /> : 'Generate Ad Photo'}
-                  </button>
-                  {error && <p className="text-red-600 text-sm mt-2 text-center">{error}</p>}
-                  {infoMessage && <p className="text-green-600 text-sm mt-2 text-center">{infoMessage}</p>}
-                </div>
-              </div>
-              <div className="lg:col-span-2">
-                {isLoading && (
-                  <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md min-h-[400px] border border-gray-200">
-                      <svg className="animate-spin h-10 w-10 text-brand-secondary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                      <p className="text-gray-700 font-semibold">AI sedang bekerja... </p>
-                      <p className="text-gray-500 text-sm">Proses ini bisa memakan waktu hingga 1 menit.</p>
-                  </div>
-                )}
-                {!isLoading && generatedImages.length > 0 && (<ImageGrid images={generatedImages} />)}
-                {!isLoading && generatedImages.length === 0 && (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md text-center min-h-[400px] border border-gray-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                        <h3 className="text-xl font-semibold text-gray-700">Hasil Anda Akan Muncul di Sini</h3>
-                        <p className="text-gray-500 mt-1">Upload foto dan atur pilihan Anda untuk memulai.</p>
-                    </div>
-                )}
-              </div>
-            </div>
-          </main>
-        );
-      default:
-        return null;
-    }
-  }
-
   return (
-    <div className="min-h-screen flex flex-col bg-brand-background">
-      <Header onGoHome={handleGoHome} onGoDashboard={handleGoDashboard} isTrialOver={isTrialOver} />
-      {renderView()}
+    <div className="min-h-screen flex flex-col bg-brand-background font-sans">
+      <Header 
+        onGoHome={handleGoHome} 
+        onGoDashboard={() => setPage('dashboard')} 
+        isTrialOver={isTrialOver}
+      />
+      {renderPage()}
+      <Footer />
       <PaymentModal 
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
-        onSuccessfulPayment={handleSuccessfulPayment}
-        isBlocking={isTrialOver}
+        onSuccessfulPayment={() => {
+            // This is optimistic. It doesn't mean payment is confirmed,
+            // just that the user has been sent to WhatsApp.
+            // We can show a confirmation message.
+            setIsPaymentModalOpen(false);
+            // Optionally redirect or show a "waiting for confirmation" message.
+        }}
+        isBlocking={isTrialOver && page === 'generator'} // Block closing if trial is over on generator page
       />
-      <Footer />
     </div>
   );
 };
