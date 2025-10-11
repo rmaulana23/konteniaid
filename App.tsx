@@ -182,12 +182,12 @@ const App: React.FC = () => {
 
     // Cek kuota pengguna yang sudah login
     if (user && profile) {
-        if (!profile.is_paid && profile.generation_count >= profile.generation_limit) { // FIX: Menggunakan is_paid
+        if (!profile.is_paid && profile.generation_count >= profile.generation_limit) {
             setError('Batas percobaan gratis Anda telah habis. Silakan selesaikan pembayaran untuk melanjutkan.');
             setIsPaymentModalOpen(true);
             return;
         }
-        if (profile.is_paid && profile.generation_count >= profile.generation_limit) { // FIX: Menggunakan is_paid
+        if (profile.is_paid && profile.generation_count >= profile.generation_limit) {
             setError('Anda telah mencapai batas maksimum generasi untuk saat ini.');
             return;
         }

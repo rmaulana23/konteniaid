@@ -6,7 +6,7 @@ export interface Profile {
   id: string;
   email?: string;
   full_name?: string;
-  is_paid: boolean; // FIX: Diubah dari paid_status menjadi is_paid
+  is_paid: boolean;
   is_admin: boolean;
   generation_count: number;
   generation_limit: number;
@@ -37,12 +37,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(currentUser);
 
         if (currentUser) {
-            // Memastikan semua kolom yang relevan diambil
-            const { data: userProfile } = await supabase
-              .from('profiles')
-              .select('id, email, full_name, is_paid, is_admin, generation_count, generation_limit')
-              .eq('id', currentUser.id)
+            // PERBAIKAN: Menggunakan RPC untuk mengambil profil dengan aman
+            const { data: userProfile, error } = await supabase
+              .rpc('get_my_profile')
               .single();
+
+            if (error) {
+              console.error("Error fetching profile via RPC:", error);
+            }
+            
             setProfile(userProfile);
         } else {
             setProfile(null);
