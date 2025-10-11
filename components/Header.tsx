@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import ProgressBar from './ProgressBar';
 
 interface HeaderProps {
   onGoHome: () => void;
@@ -56,9 +57,21 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver })
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
           {user ? (
             <>
-              <span className="text-white text-sm hidden sm:block" aria-label="User welcome">
-                Halo, {profile?.full_name || user.email}
-              </span>
+              <div className="text-right hidden sm:block">
+                  <span className="text-white text-sm" aria-label="User welcome">
+                    Halo, {profile?.full_name || user.email}
+                  </span>
+                  {profile && !profile.is_admin && (
+                    <div className="w-40 mt-1">
+                      <ProgressBar
+                        value={profile.generation_count}
+                        limit={profile.generation_limit}
+                        theme="dark"
+                      />
+                    </div>
+                  )}
+              </div>
+
               {profile?.is_admin && (
                 <button
                   onClick={onGoDashboard}
