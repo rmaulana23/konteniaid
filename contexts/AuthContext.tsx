@@ -30,24 +30,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const { data: userProfile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        setProfile(userProfile);
-      }
-      setLoading(false);
-    };
-
-    getInitialSession();
-
+    // Logika disederhanakan: onAuthStateChange menangani semua kasus,
+    // termasuk pemuatan sesi awal (INITIAL_SESSION event).
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
         setSession(session);
@@ -64,6 +48,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         } else {
             setProfile(null);
         }
+        
+        // FIX UTAMA: Atur loading ke false SETELAH semua data sesi dan profil selesai diproses.
+        setLoading(false);
       }
     );
 
