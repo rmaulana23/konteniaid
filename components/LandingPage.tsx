@@ -159,12 +159,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                 {/* All Access Card */}
                 <div className="w-full max-w-md rounded-xl p-1 bg-gradient-to-r from-brand-primary to-teal-500 shadow-2xl shadow-blue-500/20 transform hover:-translate-y-2 transition-transform duration-300">
                     <div className="bg-white rounded-lg p-8 h-full relative">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-brand-primary to-teal-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Penawaran Terbaik</div>
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-brand-primary to-teal-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Early Access</div>
                         <h3 className="text-2xl font-semibold text-gray-900">Akses Penuh Selamanya</h3>
-                        <p className="text-5xl font-extrabold my-4 text-gray-900">
-                            Rp 110rb
-                        </p>
-                        <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Pembayaran Sekali Saja</p>
+                        <div className="flex items-end justify-center gap-2 my-4">
+                            <p className="text-2xl font-medium text-gray-500 line-through">
+                                Rp 129rb
+                            </p>
+                            <p className="text-5xl font-extrabold text-gray-900">
+                                Rp 79rb
+                            </p>
+                        </div>
+                        <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 50 orang pertama</p>
                         <ul className="space-y-3 text-left text-gray-600 max-w-xs mx-auto">
                              <li className="flex items-center gap-3"><CheckIcon /><span>Akses <strong>Semua</strong> Kategori & Gaya</span></li>
                             <li className="flex items-center gap-3"><CheckIcon /><span>Fitur Modifikasi Lanjutan</span></li>

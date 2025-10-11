@@ -37,6 +37,9 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  const PAID_USER_LIMIT = 100;
+  const FREE_USER_LIMIT = 3;
+
   useEffect(() => {
     const fetchProfiles = async () => {
       setLoading(true);
@@ -60,26 +63,34 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handlePaymentStatusChange = async (profileId: string, newStatus: boolean) => {
-    // Optimistically update UI
+    // 1. Definisikan data yang akan diupdate berdasarkan status baru
+    const updatePayload = {
+      is_paid: newStatus,
+      generation_limit: newStatus ? PAID_USER_LIMIT : FREE_USER_LIMIT,
+    };
+
+    // Simpan profil asli untuk revert jika gagal
+    const originalProfile = profiles.find(p => p.id === profileId);
+    if (!originalProfile) return;
+
+    // 2. Update UI secara optimis dengan semua data baru
     setProfiles(prevProfiles =>
       prevProfiles.map(p =>
-        p.id === profileId ? { ...p, is_paid: newStatus } : p // FIX: Menggunakan is_paid
+        p.id === profileId ? { ...p, ...updatePayload } : p
       )
     );
 
-    // Update database
+    // 3. Update database dengan semua data baru
     const { error } = await supabase
       .from('profiles')
-      .update({ is_paid: newStatus }) // FIX: Menggunakan is_paid
+      .update(updatePayload)
       .eq('id', profileId);
 
+    // 4. Jika gagal, kembalikan UI ke state semula
     if (error) {
       setError(`Gagal memperbarui status untuk pengguna ${profileId}.`);
-      // Revert UI on error
       setProfiles(prevProfiles =>
-        prevProfiles.map(p =>
-          p.id === profileId ? { ...p, is_paid: !newStatus } : p // FIX: Menggunakan is_paid
-        )
+        prevProfiles.map(p => (p.id === profileId ? originalProfile : p))
       );
     }
   };
@@ -92,7 +103,7 @@ const Dashboard: React.FC = () => {
   }, [profiles, searchTerm]);
 
   const totalUsers = profiles.length;
-  const paidUsers = profiles.filter(p => p.is_paid).length; // FIX: Menggunakan is_paid
+  const paidUsers = profiles.filter(p => p.is_paid).length;
   const totalGenerations = profiles.reduce((sum, p) => sum + p.generation_count, 0);
 
   if (loading) {
@@ -154,8 +165,8 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <ToggleSwitch 
-                          checked={profile.is_paid} // FIX: Menggunakan is_paid
-                          onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)} // FIX: Menggunakan is_paid
+                          checked={profile.is_paid}
+                          onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)}
                           disabled={profile.is_admin}
                     />
                   </td>
