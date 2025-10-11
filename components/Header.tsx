@@ -54,80 +54,82 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
 
   return (
     <>
-      <header className="max-w-7xl mt-4 mx-4 sm:mx-auto py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
-        <div className="flex flex-col sm:flex-row items-center justify-between">
-          <button
-            onClick={onGoHome}
-            disabled={isTrialOver}
-            className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-secondary focus:ring-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            aria-label="Kembali ke halaman utama"
-          >
-            <LogoIcon />
-            <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
-          </button>
-          <div className="mt-4 sm:mt-0 flex items-center gap-4">
-            {user ? (
-              <>
-                <div className="hidden sm:flex items-center gap-4">
-                    {profile && !profile.is_admin && !profile.is_paid && (
-                      <button
-                          onClick={onUpgradeClick}
-                          className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-1 px-3 rounded-full text-xs transition-colors flex items-center gap-1 shadow-sm transform hover:scale-105"
-                          aria-label="Upgrade to Pro"
-                      >
-                          <UpgradeIcon />
-                          Upgrade
-                      </button>
-                    )}
-                    {profile && !profile.is_admin && (
-                      <div className="w-40">
-                        <ProgressBar
-                          value={profile.generation_count}
-                          limit={profile.generation_limit}
-                          theme="dark"
-                        />
-                      </div>
-                    )}
-                    <span className="text-white text-sm whitespace-nowrap" aria-label="User welcome">
-                      Halo, {profile?.full_name || user.email}
-                    </span>
-                </div>
+      <div className="mx-4 sm:mx-0">
+        <header className="max-w-7xl mt-4 mx-auto py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between">
+            <button
+              onClick={onGoHome}
+              disabled={isTrialOver}
+              className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-secondary focus:ring-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Kembali ke halaman utama"
+            >
+              <LogoIcon />
+              <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
+            </button>
+            <div className="mt-4 sm:mt-0 flex items-center gap-4">
+              {user ? (
+                <>
+                  <div className="hidden sm:flex items-center gap-4">
+                      {profile && !profile.is_admin && !profile.is_paid && (
+                        <button
+                            onClick={onUpgradeClick}
+                            className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-1 px-3 rounded-full text-xs transition-colors flex items-center gap-1 shadow-sm transform hover:scale-105"
+                            aria-label="Upgrade to Pro"
+                        >
+                            <UpgradeIcon />
+                            Upgrade
+                        </button>
+                      )}
+                      {profile && !profile.is_admin && (
+                        <div className="w-40">
+                          <ProgressBar
+                            value={profile.generation_count}
+                            limit={profile.generation_limit}
+                            theme="dark"
+                          />
+                        </div>
+                      )}
+                      <span className="text-white text-sm whitespace-nowrap" aria-label="User welcome">
+                        Halo, {profile?.full_name || user.email}
+                      </span>
+                  </div>
 
-                {profile?.is_admin && (
+                  {profile?.is_admin && (
+                    <button
+                      onClick={onGoDashboard}
+                      className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                      aria-label="Buka Dashboard Admin"
+                    >
+                      <DashboardIcon />
+                      Dashboard
+                    </button>
+                  )}
                   <button
-                    onClick={onGoDashboard}
-                    className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                    aria-label="Buka Dashboard Admin"
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500/100 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                    aria-label="Logout"
                   >
-                    <DashboardIcon />
-                    Dashboard
+                    <LogoutIcon />
+                    Logout
                   </button>
-                )}
+                </>
+              ) : (
                 <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500/100 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                  aria-label="Logout"
+                  onClick={login}
+                  className="hidden sm:flex items-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-2 px-4 rounded-lg transition-colors shadow-md"
+                  aria-label="Login with Google"
                 >
-                  <LogoutIcon />
-                  Logout
+                  <GoogleIcon />
+                  Login dengan Google
                 </button>
-              </>
-            ) : (
-              <button
-                onClick={login}
-                className="hidden sm:flex items-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-2 px-4 rounded-lg transition-colors shadow-md"
-                aria-label="Login with Google"
-              >
-                <GoogleIcon />
-                Login dengan Google
-              </button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       {!user && (
-        <div className="sm:hidden max-w-7xl mx-4 px-4 mt-4">
+        <div className="sm:hidden mx-4 mt-4">
             <button
               onClick={login}
               className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-3 px-4 rounded-lg transition-colors shadow-md"
