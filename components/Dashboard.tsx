@@ -60,22 +60,25 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handlePaymentStatusChange = async (profileId: string, newStatus: boolean) => {
+    // Optimistically update UI
     setProfiles(prevProfiles =>
       prevProfiles.map(p =>
-        p.id === profileId ? { ...p, paid_status: newStatus } : p
+        p.id === profileId ? { ...p, is_paid: newStatus } : p // FIX: Menggunakan is_paid
       )
     );
 
+    // Update database
     const { error } = await supabase
       .from('profiles')
-      .update({ paid_status: newStatus })
+      .update({ is_paid: newStatus }) // FIX: Menggunakan is_paid
       .eq('id', profileId);
 
     if (error) {
       setError(`Gagal memperbarui status untuk pengguna ${profileId}.`);
+      // Revert UI on error
       setProfiles(prevProfiles =>
         prevProfiles.map(p =>
-          p.id === profileId ? { ...p, paid_status: !newStatus } : p
+          p.id === profileId ? { ...p, is_paid: !newStatus } : p // FIX: Menggunakan is_paid
         )
       );
     }
@@ -89,7 +92,7 @@ const Dashboard: React.FC = () => {
   }, [profiles, searchTerm]);
 
   const totalUsers = profiles.length;
-  const paidUsers = profiles.filter(p => p.paid_status).length;
+  const paidUsers = profiles.filter(p => p.is_paid).length; // FIX: Menggunakan is_paid
   const totalGenerations = profiles.reduce((sum, p) => sum + p.generation_count, 0);
 
   if (loading) {
@@ -151,8 +154,8 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <ToggleSwitch 
-                          checked={profile.paid_status}
-                          onChange={() => handlePaymentStatusChange(profile.id, !profile.paid_status)}
+                          checked={profile.is_paid} // FIX: Menggunakan is_paid
+                          onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)} // FIX: Menggunakan is_paid
                           disabled={profile.is_admin}
                     />
                   </td>

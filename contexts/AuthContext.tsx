@@ -6,8 +6,8 @@ export interface Profile {
   id: string;
   email?: string;
   full_name?: string;
-  paid_status: boolean;
-  is_admin: boolean; // Menambahkan status admin
+  is_paid: boolean; // FIX: Diubah dari paid_status menjadi is_paid
+  is_admin: boolean;
   generation_count: number;
   generation_limit: number;
 }
@@ -30,8 +30,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Logika disederhanakan: onAuthStateChange menangani semua kasus,
-    // termasuk pemuatan sesi awal (INITIAL_SESSION event).
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
         setSession(session);
@@ -39,9 +37,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(currentUser);
 
         if (currentUser) {
+            // Memastikan semua kolom yang relevan diambil
             const { data: userProfile } = await supabase
               .from('profiles')
-              .select('*')
+              .select('id, email, full_name, is_paid, is_admin, generation_count, generation_limit')
               .eq('id', currentUser.id)
               .single();
             setProfile(userProfile);
@@ -49,7 +48,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setProfile(null);
         }
         
-        // FIX UTAMA: Atur loading ke false SETELAH semua data sesi dan profil selesai diproses.
         setLoading(false);
       }
     );
@@ -64,7 +62,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
-        // Tambahkan queryParams untuk selalu menampilkan pilihan akun
         queryParams: {
           prompt: 'select_account',
         },
