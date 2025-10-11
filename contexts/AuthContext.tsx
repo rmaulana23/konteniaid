@@ -64,6 +64,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       provider: 'google',
       options: {
         redirectTo: window.location.origin,
+        // Tambahkan queryParams untuk selalu menampilkan pilihan akun
+        queryParams: {
+          prompt: 'select_account',
+        },
       },
     });
   };
