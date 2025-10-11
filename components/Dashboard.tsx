@@ -36,9 +36,9 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
-  const PAID_USER_LIMIT = 50; // Diubah dari 100 menjadi 50
-  const FREE_USER_LIMIT = 3;
+  const PAID_USER_LIMIT = 50;
 
   useEffect(() => {
     const fetchProfiles = async () => {
@@ -66,38 +66,56 @@ const Dashboard: React.FC = () => {
     const originalProfile = profiles.find(p => p.id === profileId);
     if (!originalProfile) return;
 
-    // Definisikan payload update
-    const updatePayload: Partial<Profile> = {
-      is_paid: newStatus,
-      generation_limit: newStatus ? PAID_USER_LIMIT : FREE_USER_LIMIT,
-    };
+    const updatePayload: Partial<Profile> = { is_paid: newStatus };
 
-    // Bonus: Saat upgrade ke berbayar, reset kuota harian mereka
-    if (newStatus) {
-      updatePayload.generation_count = 0;
-      updatePayload.last_reset_at = new Date().toISOString();
+    // Smart Default: Jika pengguna diupgrade dari gratis ke berbayar,
+    // setel batas default ke 50. Tapi JANGAN ubah jika mereka di-downgrade.
+    if (newStatus === true && !originalProfile.is_paid) {
+        updatePayload.generation_limit = PAID_USER_LIMIT;
+        updatePayload.generation_count = 0; // Juga reset hitungan hariannya
+        updatePayload.last_reset_at = new Date().toISOString();
     }
-
-    // Update UI secara optimis
-    setProfiles(prevProfiles =>
-      prevProfiles.map(p =>
-        p.id === profileId ? { ...p, ...updatePayload } : p
-      )
-    );
-
-    // Update database
+    
+    setProfiles(prev => prev.map(p => p.id === profileId ? { ...p, ...updatePayload } : p));
+    
     const { error } = await supabase
       .from('profiles')
       .update(updatePayload)
       .eq('id', profileId);
 
-    // Jika gagal, kembalikan UI ke state semula
     if (error) {
-      setError(`Gagal memperbarui status untuk pengguna ${originalProfile.email}.`);
-      setProfiles(prevProfiles =>
-        prevProfiles.map(p => (p.id === profileId ? originalProfile : p))
-      );
+      setError(`Gagal memperbarui status untuk ${originalProfile.email}.`);
+      setProfiles(prev => prev.map(p => p.id === profileId ? originalProfile : p));
     }
+  };
+
+  const handleLimitChange = (profileId: string, newLimit: string) => {
+    const limitAsNumber = parseInt(newLimit, 10);
+    setProfiles(prev => prev.map(p => 
+        p.id === profileId ? { ...p, generation_limit: isNaN(limitAsNumber) ? 0 : limitAsNumber } : p
+    ));
+  };
+  
+  const handleSaveLimit = async (profileId: string) => {
+    const profileToSave = profiles.find(p => p.id === profileId);
+    if (!profileToSave) return;
+
+    setSavingStatus(prev => ({ ...prev, [profileId]: true }));
+    setError(null);
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ generation_limit: profileToSave.generation_limit })
+        .eq('id', profileId);
+
+    if (error) {
+        setError(`Gagal menyimpan batas untuk ${profileToSave.email}.`);
+        // Note: We don't revert the UI state here to allow the admin to retry.
+    }
+    
+    setTimeout(() => {
+        setSavingStatus(prev => ({ ...prev, [profileId]: false }));
+    }, 1500); // Keep "saving" state for a moment for user feedback
   };
   
   const filteredProfiles = useMemo(() => {
@@ -124,6 +142,7 @@ const Dashboard: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-1">Kelola pengguna dan pantau aktivitas aplikasi.</p>
+        {error && <p className="text-red-600 bg-red-100 p-2 rounded-md mt-2 text-sm">{error}</p>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -150,12 +169,13 @@ const Dashboard: React.FC = () => {
         </div>
         
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm text-left text-gray-700">
+          <table className="w-full min-w-[800px] text-sm text-left text-gray-700">
             <thead className="text-xs text-gray-800 uppercase bg-gray-50 border-b">
               <tr>
                 <th scope="col" className="px-6 py-3">Pengguna</th>
                 <th scope="col" className="px-6 py-3">Progres Generate</th>
                 <th scope="col" className="px-6 py-3 text-center">Sudah Bayar</th>
+                <th scope="col" className="px-6 py-3">Atur Batas Harian</th>
               </tr>
             </thead>
             <tbody>
@@ -170,15 +190,33 @@ const Dashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-center">
                     <ToggleSwitch 
-                          checked={profile.is_paid}
-                          onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)}
-                          disabled={profile.is_admin}
+                        checked={profile.is_paid}
+                        onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)}
+                        disabled={profile.is_admin}
                     />
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="number"
+                            value={profile.generation_limit}
+                            onChange={(e) => handleLimitChange(profile.id, e.target.value)}
+                            disabled={profile.is_admin}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-gray-100"
+                        />
+                        <button
+                            onClick={() => handleSaveLimit(profile.id)}
+                            disabled={savingStatus[profile.id] || profile.is_admin}
+                            className="px-3 py-1 text-xs font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-secondary disabled:bg-gray-400 transition-colors"
+                        >
+                            {savingStatus[profile.id] ? 'Menyimpan...' : 'Simpan'}
+                        </button>
+                    </div>
                   </td>
                 </tr>
               )) : (
                 <tr>
-                    <td colSpan={3} className="text-center py-8 text-gray-500">
+                    <td colSpan={4} className="text-center py-8 text-gray-500">
                         Tidak ada pengguna yang cocok dengan pencarian Anda.
                     </td>
                 </tr>
