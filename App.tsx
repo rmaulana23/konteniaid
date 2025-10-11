@@ -180,19 +180,8 @@ const App: React.FC = () => {
     setInfoMessage(null);
     setError(null);
 
-    // PERBAIKAN: Cek kuota sebelum generate berdasarkan jumlah variasi
-    if (user && profile) {
-        const remainingGenerations = profile.generation_limit - profile.generation_count;
-        if (variations > remainingGenerations) {
-            if (!profile.is_paid) {
-                setError(`Kuota percobaan Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi atau selesaikan pembayaran.`);
-                setIsPaymentModalOpen(true);
-            } else {
-                setError(`Kuota Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi.`);
-            }
-            return;
-        }
-    } else if (!user) { // Cek untuk tamu
+    // Cek kuota untuk tamu di frontend untuk feedback cepat
+    if (!user) {
         const remainingGenerations = GUEST_LIMIT - guestGenerations;
         if (variations > remainingGenerations) {
             setError(`Kuota percobaan gratis Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi, login, atau lakukan pembayaran.`);
@@ -200,6 +189,9 @@ const App: React.FC = () => {
             return;
         }
     }
+    
+    // Untuk pengguna login, pengecekan kuota akan dilakukan oleh fungsi database
+    // untuk memastikan logika reset harian diterapkan dengan benar.
 
     setIsLoading(true);
     setGeneratedImages([]);
@@ -217,20 +209,29 @@ const App: React.FC = () => {
       );
       setGeneratedImages(images);
       
-      // PERBAIKAN: Hitung kuota berdasarkan jumlah variasi
       if (user && profile) {
-          const newCount = profile.generation_count + variations;
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ generation_count: newCount })
-            .eq('id', user.id);
-            
-          if (updateError) {
-             console.error('Gagal update hitungan pengguna:', updateError);
-             setError('Gagal menyimpan progres Anda. Coba lagi.');
-          } else {
-             setProfile({ ...profile, generation_count: newCount });
+          // Panggil fungsi RPC yang cerdas di database
+          const { data: updatedProfile, error: rpcError } = await supabase
+            .rpc('increment_and_reset_count', { generation_amount: variations })
+            .single();
+
+          if (rpcError) {
+             console.error('Gagal update kuota via RPC:', rpcError);
+             if (rpcError.message.includes('insufficient_quota')) {
+                 const errorMessage = profile.is_paid
+                    ? `Kuota harian Anda tidak cukup. Kuota akan direset besok.`
+                    : `Kuota percobaan Anda tidak cukup. Silakan selesaikan pembayaran untuk mendapatkan 100 kuota harian.`;
+                 setError(errorMessage);
+                 if (!profile.is_paid) {
+                    setIsPaymentModalOpen(true);
+                 }
+             } else {
+                 setError('Gagal menyimpan progres Anda. Coba lagi.');
+             }
+          } else if (updatedProfile) {
+             setProfile(updatedProfile); // Update state dengan profil terbaru dari database
           }
+
       } else if (deviceId) {
         const newCount = guestGenerations + variations;
         const { error: upsertError } = await supabase

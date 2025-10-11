@@ -37,7 +37,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const PAID_USER_LIMIT = 100;
+  const PAID_USER_LIMIT = 50; // Diubah dari 100 menjadi 50
   const FREE_USER_LIMIT = 3;
 
   useEffect(() => {
@@ -63,32 +63,37 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const handlePaymentStatusChange = async (profileId: string, newStatus: boolean) => {
-    // 1. Definisikan data yang akan diupdate berdasarkan status baru
-    const updatePayload = {
+    const originalProfile = profiles.find(p => p.id === profileId);
+    if (!originalProfile) return;
+
+    // Definisikan payload update
+    const updatePayload: Partial<Profile> = {
       is_paid: newStatus,
       generation_limit: newStatus ? PAID_USER_LIMIT : FREE_USER_LIMIT,
     };
 
-    // Simpan profil asli untuk revert jika gagal
-    const originalProfile = profiles.find(p => p.id === profileId);
-    if (!originalProfile) return;
+    // Bonus: Saat upgrade ke berbayar, reset kuota harian mereka
+    if (newStatus) {
+      updatePayload.generation_count = 0;
+      updatePayload.last_reset_at = new Date().toISOString();
+    }
 
-    // 2. Update UI secara optimis dengan semua data baru
+    // Update UI secara optimis
     setProfiles(prevProfiles =>
       prevProfiles.map(p =>
         p.id === profileId ? { ...p, ...updatePayload } : p
       )
     );
 
-    // 3. Update database dengan semua data baru
+    // Update database
     const { error } = await supabase
       .from('profiles')
       .update(updatePayload)
       .eq('id', profileId);
 
-    // 4. Jika gagal, kembalikan UI ke state semula
+    // Jika gagal, kembalikan UI ke state semula
     if (error) {
-      setError(`Gagal memperbarui status untuk pengguna ${profileId}.`);
+      setError(`Gagal memperbarui status untuk pengguna ${originalProfile.email}.`);
       setProfiles(prevProfiles =>
         prevProfiles.map(p => (p.id === profileId ? originalProfile : p))
       );

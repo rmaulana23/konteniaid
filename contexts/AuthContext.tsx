@@ -10,6 +10,7 @@ export interface Profile {
   is_admin: boolean;
   generation_count: number;
   generation_limit: number;
+  last_reset_at?: string | null; // Tambahkan field ini
 }
 
 interface AuthContextType {

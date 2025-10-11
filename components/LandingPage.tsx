@@ -105,7 +105,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                     >
                         Coba GRATIS Sekarang
                     </button>
-                    
+                    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3x Percobaan tanpa login.</p>
                 </div>
                 {/* Right Column: Image Slider */}
                 <div>
@@ -150,17 +150,17 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
         {/* Pricing Section */}
         <div className="py-12 sm:py-24 text-center">
             <h2 className="text-3xl font-bold mb-4 text-gray-900">
-                Satu Harga untuk Akses Penuh
+                Satu Harga untuk Akses Semua Kategori
             </h2>
             <p className="max-w-xl mx-auto text-gray-600 mb-12">
-                Investasi sekali untuk mendapatkan semua fitur, semua kategori, selamanya. Tanpa biaya bulanan, tanpa batasan.
+                Investasi sekali untuk mendapatkan semua fitur, tanpa biaya bulanan (50x/Hari)
             </p>
             <div className="flex items-center justify-center">
                 {/* All Access Card */}
                 <div className="w-full max-w-md rounded-xl p-1 bg-gradient-to-r from-brand-primary to-teal-500 shadow-2xl shadow-blue-500/20 transform hover:-translate-y-2 transition-transform duration-300">
                     <div className="bg-white rounded-lg p-8 h-full relative">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-brand-primary to-teal-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Early Access</div>
-                        <h3 className="text-2xl font-semibold text-gray-900">Akses Penuh Selamanya</h3>
+                        <h3 className="text-2xl font-semibold text-gray-900">Akses Uji Coba</h3>
                         <div className="flex items-end justify-center gap-2 my-4">
                             <p className="text-2xl font-medium text-gray-500 line-through">
                                 Rp 129rb
