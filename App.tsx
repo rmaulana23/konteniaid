@@ -144,9 +144,22 @@ const App: React.FC = () => {
       return;
     }
 
-    if (isTrialOver) {
-      setIsPaymentModalOpen(true);
-      return;
+    // Blokir generasi jika batas uji coba gratis terlampaui.
+    if (profile && !profile.is_paid) {
+      const remainingGenerations = profile.generation_limit - profile.generation_count;
+
+      // Kasus 1: Pengguna sama sekali tidak punya sisa generasi.
+      if (remainingGenerations <= 0) {
+        setError('Sisa generate gratis Anda sudah habis. Silakan upgrade untuk melanjutkan.');
+        setIsPaymentModalOpen(true);
+        return;
+      }
+
+      // Kasus 2: Pengguna mencoba membuat lebih banyak variasi daripada sisa kuota gratis mereka.
+      if (variations > remainingGenerations) {
+        setError(`Gagal. Anda mencoba membuat ${variations} variasi, tetapi sisa jatah gratis Anda hanya ${remainingGenerations}. Silakan kurangi jumlah variasi atau upgrade.`);
+        return;
+      }
     }
 
     setIsLoading(true);
