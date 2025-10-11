@@ -364,6 +364,7 @@ const App: React.FC = () => {
       <Header 
         onGoHome={handleGoHome} 
         onGoDashboard={() => setPage('dashboard')} 
+        onUpgradeClick={() => setIsPaymentModalOpen(true)}
         isTrialOver={isTrialOver}
       />
       {renderPage()}
