@@ -88,7 +88,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
       <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
 
         {/* Hero Section */}
-        <div className="py-16 sm:py-24">
+        <div className="py-8 sm:py-16">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                 {/* Left Column: CTA */}
                 <div className="text-center lg:text-left">
