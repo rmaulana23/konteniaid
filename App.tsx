@@ -180,24 +180,25 @@ const App: React.FC = () => {
     setInfoMessage(null);
     setError(null);
 
-    // Cek kuota pengguna yang sudah login
+    // PERBAIKAN: Cek kuota sebelum generate berdasarkan jumlah variasi
     if (user && profile) {
-        if (!profile.is_paid && profile.generation_count >= profile.generation_limit) {
-            setError('Batas percobaan gratis Anda telah habis. Silakan selesaikan pembayaran untuk melanjutkan.');
+        const remainingGenerations = profile.generation_limit - profile.generation_count;
+        if (variations > remainingGenerations) {
+            if (!profile.is_paid) {
+                setError(`Kuota percobaan Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi atau selesaikan pembayaran.`);
+                setIsPaymentModalOpen(true);
+            } else {
+                setError(`Kuota Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi.`);
+            }
+            return;
+        }
+    } else if (!user) { // Cek untuk tamu
+        const remainingGenerations = GUEST_LIMIT - guestGenerations;
+        if (variations > remainingGenerations) {
+            setError(`Kuota percobaan gratis Anda tidak cukup (tersisa ${remainingGenerations}). Silakan kurangi jumlah variasi, login, atau lakukan pembayaran.`);
             setIsPaymentModalOpen(true);
             return;
         }
-        if (profile.is_paid && profile.generation_count >= profile.generation_limit) {
-            setError('Anda telah mencapai batas maksimum generasi untuk saat ini.');
-            return;
-        }
-    }
-    
-    // Cek kuota tamu
-    if (isTrialOver) {
-        setError('Batas percobaan gratis Anda telah habis. Silakan login atau lakukan pembayaran untuk melanjutkan.');
-        setIsPaymentModalOpen(true);
-        return;
     }
 
     setIsLoading(true);
@@ -216,8 +217,9 @@ const App: React.FC = () => {
       );
       setGeneratedImages(images);
       
+      // PERBAIKAN: Hitung kuota berdasarkan jumlah variasi
       if (user && profile) {
-          const newCount = profile.generation_count + 1;
+          const newCount = profile.generation_count + variations;
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ generation_count: newCount })
@@ -227,21 +229,21 @@ const App: React.FC = () => {
              console.error('Gagal update hitungan pengguna:', updateError);
              setError('Gagal menyimpan progres Anda. Coba lagi.');
           } else {
-             // PERBAIKAN: Update state lokal secara langsung untuk umpan balik instan
              setProfile({ ...profile, generation_count: newCount });
           }
       } else if (deviceId) {
-        // Update hitungan untuk tamu
-        const newCount = guestGenerations + 1;
+        const newCount = guestGenerations + variations;
         const { error: upsertError } = await supabase
           .from('guest_usage')
           .upsert({ device_id: deviceId, generation_count: newCount });
 
-        if (upsertError) console.error('Gagal update penggunaan tamu:', upsertError);
+        if (upsertError) {
+            console.error('Gagal update penggunaan tamu:', upsertError);
+        }
         setGuestGenerations(newCount);
         
         if (newCount >= GUEST_LIMIT) {
-           setError('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan login atau lakukan pembayaran.');
+           setInfoMessage('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan login.');
         }
       }
 
