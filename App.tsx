@@ -8,6 +8,7 @@ import OptionSelector from './components/OptionSelector';
 import ImageGrid from './components/ImageGrid';
 import Spinner from './components/Spinner';
 import PaymentModal from './components/PaymentModal';
+import AccessCodeModal from './components/AccessCodeModal';
 import Dashboard from './components/Dashboard';
 
 import { useAuth } from './contexts/AuthContext';
@@ -22,6 +23,7 @@ import {
   CarColor,
   VehicleType,
   ColorTone,
+  LiveryStyle,
 } from './types';
 
 import {
@@ -31,22 +33,34 @@ import {
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
   AUTOMOTIVE_MODIFICATION_OPTIONS,
+  MOTORCYCLE_MODIFICATION_OPTIONS,
   CAR_COLOR_OPTIONS,
   VEHICLE_TYPE_OPTIONS,
   COLOR_TONE_OPTIONS,
   VARIATION_OPTIONS,
   YES_NO_OPTIONS,
+  LIVERY_STYLE_OPTIONS,
 } from './constants';
 
 type Page = 'landing' | 'category' | 'generator' | 'dashboard';
 
+const GUEST_GENERATION_LIMIT = 3;
+
 const App: React.FC = () => {
-  const { user, profile, setProfile, login, loading: authLoading } = useAuth();
+  const { user, profile, setProfile, authLoading } = useAuth();
 
   // App State
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
   
+  // Guest State
+  const [guestGenerationCount, setGuestGenerationCount] = useState<number>(() => {
+    const savedCount = localStorage.getItem('guestGenerationCount');
+    return savedCount ? parseInt(savedCount, 10) : 0;
+  });
+  const [pendingCategory, setPendingCategory] = useState<ProductCategory | null>(null);
+
   // Form State
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -66,6 +80,9 @@ const App: React.FC = () => {
   const [wideBody, setWideBody] = useState<'yes' | 'no'>('no');
   const [rims, setRims] = useState<'yes' | 'no'>('no');
   const [hood, setHood] = useState<'yes' | 'no'>('no');
+  const [livery, setLivery] = useState<LiveryStyle>('none');
+  const [stickerFile, setStickerFile] = useState<File | null>(null);
+  const [stickerPreview, setStickerPreview] = useState<string | null>(null);
 
 
   // Generation State
@@ -73,11 +90,23 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isTrialOver = useMemo(() => {
-    if (!profile) return false;
-    return !profile.is_paid && profile.generation_count >= profile.generation_limit;
-  }, [profile]);
+  // Sync guest generation count with localStorage
+  useEffect(() => {
+    localStorage.setItem('guestGenerationCount', guestGenerationCount.toString());
+  }, [guestGenerationCount]);
 
+  const isTrialOver = useMemo(() => {
+    if (user && profile) {
+      // Logic for logged-in users
+      return !profile.is_paid && profile.generation_count >= profile.generation_limit;
+    }
+    // Logic for guest users
+    return guestGenerationCount >= GUEST_GENERATION_LIMIT;
+  }, [profile, user, guestGenerationCount]);
+
+  // This effect forces a redirect to 'landing' if not logged in.
+  // We comment it out to allow navigation without being logged in.
+  /*
   useEffect(() => {
     if (authLoading) return;
     if (user && profile) {
@@ -89,6 +118,7 @@ const App: React.FC = () => {
       resetGeneratorState();
     }
   }, [user, profile, authLoading, page]);
+  */
   
   const resetGeneratorState = () => {
     setSelectedCategory(null);
@@ -110,6 +140,9 @@ const App: React.FC = () => {
     setWideBody('no');
     setRims('no');
     setHood('no');
+    setLivery('none');
+    setStickerFile(null);
+    setStickerPreview(null);
   };
 
   const handleGoHome = () => {
@@ -118,24 +151,71 @@ const App: React.FC = () => {
   };
 
   const handleStart = () => {
-    if (user) {
-      setPage('category');
-    } else {
-      login();
-    }
+    setPage('category');
   };
   
   const handleSelectCategory = (category: ProductCategory) => {
+    if (isTrialOver) {
+      setPendingCategory(category); // Save the category user wants to access
+      setIsAccessCodeModalOpen(true);
+      return;
+    }
     setSelectedCategory(category);
     // Reset style to a default valid for all, then let specific logic handle it
     setAdStyle('indoor_studio'); 
     setPage('generator');
   };
 
+  const handleVerifyAccessCode = async (code: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('access_codes')
+        .select('code')
+        .eq('code', code.trim())
+        .single();
+
+      if (error || !data) {
+        console.error('Access code verification error:', error?.message);
+        return false;
+      }
+
+      // Code is valid
+      setGuestGenerationCount(0); // Reset trial count
+      setIsAccessCodeModalOpen(false);
+      
+      // Proceed to the category the user intended to select
+      if (pendingCategory) {
+        setSelectedCategory(pendingCategory);
+        setAdStyle('indoor_studio');
+        setPage('generator');
+        setPendingCategory(null); // Clear pending state
+      }
+
+      return true;
+
+    } catch (e) {
+      console.error('An exception occurred during code verification:', e);
+      return false;
+    }
+  };
+
+
   const handleImageUpload = (file: File) => {
     setImageFile(file);
     const previewUrl = URL.createObjectURL(file);
     setUploadedImagePreview(previewUrl);
+  };
+
+  const handleStickerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+        setStickerFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setStickerPreview(previewUrl);
+    } else {
+        setStickerFile(null);
+        setStickerPreview(null);
+    }
   };
 
   const handleGenerateClick = async () => {
@@ -144,22 +224,11 @@ const App: React.FC = () => {
       return;
     }
 
-    // Blokir generasi jika batas uji coba gratis terlampaui.
-    if (profile && !profile.is_paid) {
-      const remainingGenerations = profile.generation_limit - profile.generation_count;
-
-      // Kasus 1: Pengguna sama sekali tidak punya sisa generasi.
-      if (remainingGenerations <= 0) {
-        setError('Sisa generate gratis Anda sudah habis. Silakan upgrade untuk melanjutkan.');
-        setIsPaymentModalOpen(true);
-        return;
-      }
-
-      // Kasus 2: Pengguna mencoba membuat lebih banyak variasi daripada sisa kuota gratis mereka.
-      if (variations > remainingGenerations) {
-        setError(`Gagal. Anda mencoba membuat ${variations} variasi, tetapi sisa jatah gratis Anda hanya ${remainingGenerations}. Silakan kurangi jumlah variasi atau upgrade.`);
-        return;
-      }
+    // Block generation if trial is over.
+    if (isTrialOver) {
+      setError('Sisa generate gratis Anda sudah habis. Silakan upgrade untuk melanjutkan.');
+      setIsAccessCodeModalOpen(true);
+      return;
     }
 
     setIsLoading(true);
@@ -182,13 +251,15 @@ const App: React.FC = () => {
         spoiler,
         wideBody,
         rims,
-        hood
+        hood,
+        livery,
+        stickerFile
       );
       setGeneratedImages(newImages);
 
-      // Update generation count
-      if (profile && !profile.is_admin) {
-        const newCount = profile.generation_count + variations;
+      // Update generation count: always +1 per click
+      if (user && profile && !profile.is_admin) {
+        const newCount = profile.generation_count + 1;
         const { error: updateError } = await supabase
           .from('profiles')
           .update({ generation_count: newCount })
@@ -196,11 +267,12 @@ const App: React.FC = () => {
 
         if (updateError) {
           console.error("Failed to update generation count:", updateError);
-          // Don't block user, but log it
         } else {
-          // Optimistically update local profile state
           setProfile({ ...profile, generation_count: newCount });
         }
+      } else if (!user) {
+        // Update guest count
+        setGuestGenerationCount(prevCount => prevCount + 1);
       }
     } catch (e: any) {
       setError(e.message || 'Terjadi kesalahan yang tidak diketahui.');
@@ -223,6 +295,25 @@ const App: React.FC = () => {
           setAdStyle(adStyleOptions[0].value);
       }
   }, [adStyle, adStyleOptions]);
+
+  // Logic to dynamically select modification options based on vehicle type
+  const modificationOptions = useMemo(() => {
+    if (selectedCategory !== 'automotive') return [];
+    return vehicleType === 'mobil' 
+        ? AUTOMOTIVE_MODIFICATION_OPTIONS
+        : MOTORCYCLE_MODIFICATION_OPTIONS;
+  }, [selectedCategory, vehicleType]);
+
+  // Effect to reset modification choice if it becomes invalid after switching vehicle type
+  useEffect(() => {
+    if (selectedCategory === 'automotive') {
+      const isValid = modificationOptions.some(opt => opt.value === automotiveModification);
+      if (!isValid) {
+        setAutomotiveModification('none');
+      }
+    }
+  }, [vehicleType, automotiveModification, modificationOptions, selectedCategory]);
+
 
   const renderGeneratorForm = () => {
     if (!selectedCategory) return null;
@@ -258,7 +349,7 @@ const App: React.FC = () => {
             {selectedCategory === 'automotive' && (
               <>
                 <OptionSelector title="Jenis Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)} />
-                <OptionSelector title="Pilih Modifikasi" options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v as AutomotiveModification)} />
+                <OptionSelector title="Pilih Modifikasi" options={modificationOptions} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v as AutomotiveModification)} />
                 
                 {vehicleType === 'mobil' && automotiveModification === 'custom' && (
                     <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -267,6 +358,35 @@ const App: React.FC = () => {
                         <OptionSelector title="Wide Body" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v as 'yes' | 'no')} />
                         <OptionSelector title="Rims/Velg" options={YES_NO_OPTIONS} selectedValue={rims} onValueChange={(v) => setRims(v as 'yes' | 'no')} />
                         <OptionSelector title="Hood" options={YES_NO_OPTIONS} selectedValue={hood} onValueChange={(v) => setHood(v as 'yes' | 'no')} />
+                        <OptionSelector title="Livery" options={LIVERY_STYLE_OPTIONS} selectedValue={livery} onValueChange={(v) => setLivery(v as LiveryStyle)} />
+                        
+                        <div className="pt-4 border-t border-blue-100">
+                            <label htmlFor="sticker-upload" className="block text-sm font-medium text-gray-700 mb-2">Sticker Sponsor (Opsional)</label>
+                            <input
+                                type="file"
+                                id="sticker-upload"
+                                onChange={handleStickerUpload}
+                                accept="image/png, image/jpeg, image/webp"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100"
+                            />
+                            {stickerPreview && (
+                                <div className="mt-2 relative inline-block">
+                                    <img src={stickerPreview} alt="Sticker preview" className="h-16 w-16 object-contain rounded-md border p-1" />
+                                    <button 
+                                        onClick={() => { 
+                                            setStickerFile(null); 
+                                            setStickerPreview(null);
+                                            const input = document.getElementById('sticker-upload') as HTMLInputElement;
+                                            if (input) input.value = '';
+                                        }}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs font-bold"
+                                        aria-label="Hapus sticker"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -319,7 +439,7 @@ const App: React.FC = () => {
                 'Generate Foto Iklan'
               )}
             </button>
-            {isTrialOver && <p className="text-center text-sm text-red-600 mt-2">Sisa generate gratis Anda habis. Silakan upgrade untuk melanjutkan.</p>}
+            {isTrialOver && <p className="text-center text-sm text-red-600 mt-2">Sisa generate gratis Anda habis. Masukkan kode akses untuk melanjutkan.</p>}
           </div>
 
           {/* Right Column: Results */}
@@ -386,13 +506,17 @@ const App: React.FC = () => {
         isOpen={isPaymentModalOpen}
         onClose={() => setIsPaymentModalOpen(false)}
         onSuccessfulPayment={() => {
-            // This is optimistic. It doesn't mean payment is confirmed,
-            // just that the user has been sent to WhatsApp.
-            // We can show a confirmation message.
             setIsPaymentModalOpen(false);
-            // Optionally redirect or show a "waiting for confirmation" message.
         }}
-        isBlocking={isTrialOver && page === 'generator'} // Block closing if trial is over on generator page
+      />
+      <AccessCodeModal
+        isOpen={isAccessCodeModalOpen}
+        onClose={() => {
+            setIsAccessCodeModalOpen(false);
+            // If they close the code modal, open the payment modal as an alternative
+            setIsPaymentModalOpen(true);
+        }}
+        onVerify={handleVerifyAccessCode}
       />
     </div>
   );

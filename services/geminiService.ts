@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone } from '../types';
+import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle } from '../types';
 
 let ai: GoogleGenAI;
 
@@ -46,7 +46,9 @@ const getPrompt = (
     spoiler?: 'yes' | 'no',
     wideBody?: 'yes' | 'no',
     rims?: 'yes' | 'no',
-    hood?: 'yes' | 'no'
+    hood?: 'yes' | 'no',
+    livery?: LiveryStyle,
+    hasSticker?: boolean
 ): string => {
     let basePrompt = '';
 
@@ -113,6 +115,9 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                     case 'racing_team':
                         modificationPrompt = 'In addition to the scene, the motorcycle must be transformed into a full race bike. This includes a complete aerodynamic racing fairing kit, a high-performance custom exhaust system, lightweight racing wheels with slick tires, and a full-body custom racing team livery. The stance should be aggressive and track-ready.';
                         break;
+                    case 'lowrider_style':
+                        modificationPrompt = 'In addition to the scene, the motorcycle must be heavily modified into a Lowrider style. The key features are large-diameter spoked wheels (wire wheels) with thick, high-profile tires. Include custom extended handlebars (like ape hangers), a low-slung custom seat, and plenty of chrome details on the engine and exhaust. The suspension should appear lowered, giving it a classic lowrider stance.';
+                        break;
                 }
             } else { // CAR LOGIC (DEFAULT)
                 switch (automotiveModification) {
@@ -122,6 +127,12 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                     case 'racing_team':
                         modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified. The main visual change is a full professional widebody race kit, including drastically redesigned aerodynamic bumpers and a large rear wing. Also, apply a full body custom racing team livery, fit it with aggressive racing wheels, and lower the suspension for a track-ready stance.';
                         break;
+                    case 'off_road_look':
+                        modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified into a rugged off-road machine. This includes fitting large, aggressive all-terrain or mud-terrain tires with a knobby tread pattern. The suspension must be visibly lifted, showing off heavy-duty shocks. Add a front bull bar or winch bumper, a roof rack, and multiple bright auxiliary LED lights (like a light bar on the roof or pods on the bumper). The overall stance should be high and capable.';
+                        break;
+                    case 'rally_art':
+                        modificationPrompt = 'In addition to the scene, transform the vehicle into an authentic rally car. This includes applying a full-body \'Rally Art\' style livery, covered in numerous prominent sponsor logos (like \'Pirelli\', \'Sparco\', \'Mobil 1\'). Fit it with smaller, multi-spoke rally wheels and appropriate tires. Add mud flaps behind the wheels. Importantly, the car should have a light layer of realistic dirt, dust, or mud splatter, as if it has just completed a rally stage, to enhance the authenticity.';
+                        break;
                     case 'custom':
                         const customMods: string[] = [];
                         if (spoiler === 'yes') customMods.push('a custom rear spoiler (choose a style that fits the car, e.g., ducktail, wing, or lip spoiler)');
@@ -129,8 +140,34 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                         if (rims === 'yes') customMods.push('large, high-end custom aftermarket wheels/rims');
                         if (hood === 'yes') customMods.push('a custom hood, for example one with vents or a scoop');
                         
+                        let partsPrompt = '';
                         if (customMods.length > 0) {
-                            modificationPrompt = `In addition to the scene, the vehicle must be modified with the following custom parts: ${customMods.join(', ')}. Also, lower the car's suspension for a clean, stanced look. Ensure the modifications are integrated seamlessly and look realistic.`;
+                            partsPrompt = `Apply the following custom parts: ${customMods.join(', ')}, and lower the car's suspension for a clean, stanced look.`;
+                        }
+
+                        let liveryPrompt = '';
+                        if (livery && livery !== 'none') {
+                            switch (livery) {
+                                case 'racing_team':
+                                    liveryPrompt = 'Apply a full-body professional racing team livery. The design should feature bold sponsor logos (use generic or fictional brands like \'Nitto\', \'Advan\', \'Brembo\'), dynamic racing stripes, and a prominent race number. The look should be clean and authentic to a real circuit race car.';
+                                    break;
+                                case 'drift_style':
+                                    liveryPrompt = 'Apply a vibrant, aggressive drift-style livery. This should be a mix of street and race aesthetics, featuring contrasting sharp-angled graphics, slanted sponsor logos, and possibly a two-tone color scheme. The vibe should be energetic and eye-catching, typical of drift event cars.';
+                                    break;
+                                case 'retro_feel':
+                                    liveryPrompt = 'Apply a classic, retro-inspired racing livery. Take inspiration from iconic motorsport liveries like Marlboro, Gulf, Martini, or Castrol. Use their distinct color palettes and simple, bold graphic styles to give the car a vintage racing feel.';
+                                    break;
+                            }
+                        }
+
+                        let stickerPrompt = '';
+                        if (hasSticker) {
+                            stickerPrompt = 'A second image has been uploaded which is a logo. Apply this logo as a realistic sponsor sticker onto the side of the car. It must look like a real vinyl decal, conforming to the car\'s body panels and affected by the scene\'s lighting and reflections.';
+                        }
+                        
+                        const allMods = [partsPrompt, liveryPrompt, stickerPrompt].filter(Boolean).join(' ');
+                        if (allMods) {
+                            modificationPrompt = `In addition to the scene, the vehicle must be modified. ${allMods} Ensure all modifications are integrated seamlessly and look realistic.`;
                         }
                         break;
                 }
@@ -146,6 +183,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                 switch (carColor) {
                     case 'metallic_black': colorDescription = 'a deep, glossy metallic black'; break;
                     case 'pearl_white': colorDescription = 'a brilliant, shimmering pearl white'; break;
+
                     case 'candy_red': colorDescription = 'a vibrant, rich candy red'; break;
                     case 'gunmetal_gray': colorDescription = 'a dark, sleek gunmetal gray'; break;
                     case 'electric_blue': colorDescription = 'a striking, bright electric blue'; break;
@@ -242,22 +280,35 @@ export const generateAdPhotos = async (
   spoiler?: 'yes' | 'no',
   wideBody?: 'yes' | 'no',
   rims?: 'yes' | 'no',
-  hood?: 'yes' | 'no'
+  hood?: 'yes' | 'no',
+  livery?: LiveryStyle,
+  stickerFile?: File | null
 ): Promise<string[]> => {
   try {
     const genAI = initAi();
-    const imagePart = await fileToGenerativePart(imageFile);
     const generatedImages: string[] = [];
-    const textPrompt = getPrompt(category, adStyle, modelGender, automotiveModification, carColor, vehicleType, customPrompt, customCarColor, colorTone, spoiler, wideBody, rims, hood);
+    
+    const textPrompt = getPrompt(
+        category, adStyle, modelGender, automotiveModification, carColor, 
+        vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
+        wideBody, rims, hood, livery, !!stickerFile
+    );
+
+    const imagePart = await fileToGenerativePart(imageFile);
+    // FIX: The `contentParts` array was incorrectly inferred as containing only image parts, causing a type error when adding a text part. This has been refactored to build the array in a way that allows TypeScript to correctly infer the union type.
+    const imageParts = [imagePart];
+    if (stickerFile) {
+        const stickerImagePart = await fileToGenerativePart(stickerFile);
+        imageParts.push(stickerImagePart);
+    }
+    const contentParts = [...imageParts, { text: textPrompt }];
+
 
     for (let i = 0; i < variations; i++) {
         const response = await genAI.models.generateContent({
             model: 'gemini-2.5-flash-image',
             contents: {
-              parts: [
-                imagePart,
-                { text: textPrompt },
-              ],
+              parts: contentParts,
             },
             config: {
                 responseModalities: [Modality.IMAGE, Modality.TEXT],

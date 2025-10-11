@@ -1,4 +1,4 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
@@ -39,7 +39,23 @@ export const AUTOMOTIVE_MODIFICATION_OPTIONS: SelectOption<AutomotiveModificatio
     { value: 'none', label: 'No Modifikasi' },
     { value: 'elegant_luxury', label: 'Elegant Luxury' },
     { value: 'racing_team', label: 'Racing Team' },
+    { value: 'off_road_look', label: 'Off-road Look' },
+    { value: 'rally_art', label: 'Rally Art' },
     { value: 'custom', label: 'Custom' },
+];
+
+export const MOTORCYCLE_MODIFICATION_OPTIONS: SelectOption<AutomotiveModification>[] = [
+    { value: 'none', label: 'No Modifikasi' },
+    { value: 'elegant_luxury', label: 'Elegant Luxury' },
+    { value: 'racing_team', label: 'Racing Team' },
+    { value: 'lowrider_style', label: 'Lowrider Style' },
+];
+
+export const LIVERY_STYLE_OPTIONS: SelectOption<LiveryStyle>[] = [
+    { value: 'none', label: 'Tanpa Livery' },
+    { value: 'racing_team', label: 'Racing Team' },
+    { value: 'drift_style', label: 'Drift Style' },
+    { value: 'retro_feel', label: 'Retro Feel' },
 ];
 
 export const CAR_COLOR_OPTIONS: SelectOption<CarColor>[] = [

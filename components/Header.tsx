@@ -67,6 +67,8 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
               <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
             </button>
             <div className="mt-4 sm:mt-0 flex items-center gap-4">
+              {/* --- START: Temporarily hidden login/user section --- */}
+              {/*
               {user ? (
                 <>
                   <div className="hidden sm:flex items-center gap-4">
@@ -123,11 +125,15 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
                   Login dengan Google
                 </button>
               )}
+              */}
+              {/* --- END: Temporarily hidden login/user section --- */}
             </div>
           </div>
         </header>
       </div>
 
+      {/* --- START: Temporarily hidden mobile login button --- */}
+      {/*
       {!user && (
         <div className="sm:hidden mx-4 mt-4">
             <button
@@ -140,6 +146,8 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
             </button>
         </div>
       )}
+      */}
+      {/* --- END: Temporarily hidden mobile login button --- */}
     </>
   );
 };
