@@ -11,4 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // NOTE: Pastikan Anda telah menjalankan skrip SQL yang diberikan untuk menambahkan
 // kolom 'is_admin' dan memperbarui kebijakan RLS (Row Level Security).
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});

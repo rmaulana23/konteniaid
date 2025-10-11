@@ -34,25 +34,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
-        setSession(session);
-        const currentUser = session?.user ?? null;
-        setUser(currentUser);
+        try {
+          setSession(session);
+          const currentUser = session?.user ?? null;
+          setUser(currentUser);
 
-        if (currentUser) {
-            const { data: userProfile, error } = await supabase
-              .rpc('get_my_profile')
-              .single();
+          if (currentUser) {
+              const { data: userProfile, error } = await supabase
+                .rpc('get_my_profile')
+                .single();
 
-            if (error) {
-              console.error("Error fetching profile via RPC:", error);
-            }
-            
-            setProfile(userProfile as Profile | null);
-        } else {
-            setProfile(null);
+              if (error) {
+                console.error("Error fetching profile via RPC:", error);
+              }
+              
+              setProfile(userProfile as Profile | null);
+          } else {
+              setProfile(null);
+          }
+        } catch (error) {
+          console.error("An error occurred in the auth state change handler:", error);
+          setProfile(null); // Reset profile on error as a safeguard
+        } finally {
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 

@@ -220,17 +220,22 @@ const App: React.FC = () => {
           <div className="lg:col-span-1 space-y-6 bg-gray-50 p-6 rounded-lg border">
             <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
             
-            <OptionSelector title="2. Pilih Gaya Iklan" options={adStyleOptions} selectedValue={adStyle} onValueChange={setAdStyle} />
+            {/* Fix for line 223 */}
+            <OptionSelector title="2. Pilih Gaya Iklan" options={adStyleOptions} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v as AdStyle)} />
 
             {selectedCategory === 'fashion_lifestyle' && (
-              <OptionSelector title="Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={setModelGender} />
+              // Fix for line 226
+              <OptionSelector title="Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v as ModelGender)} />
             )}
 
             {selectedCategory === 'automotive' && (
               <>
-                <OptionSelector title="Jenis Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={setVehicleType} />
-                <OptionSelector title="Pilih Modifikasi" options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={setAutomotiveModification} />
-                <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={setCarColor} />
+                {/* Fix for line 231 */}
+                <OptionSelector title="Jenis Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)} />
+                {/* Fix for line 232 */}
+                <OptionSelector title="Pilih Modifikasi" options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v as AutomotiveModification)} />
+                {/* Fix for line 233 */}
+                <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={(v) => setCarColor(v as CarColor)} />
                 {carColor === 'custom' && (
                     <div>
                         <label htmlFor="custom-car-color" className="block text-sm font-medium text-gray-700 mb-1">Tulis Warna Custom</label>
@@ -248,10 +253,12 @@ const App: React.FC = () => {
             )}
 
             {selectedCategory === 'food_beverage' && (
-                <OptionSelector title="Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={setColorTone} />
+                // Fix for line 251
+                <OptionSelector title="Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v as ColorTone)} />
             )}
 
-            <OptionSelector title="3. Jumlah Variasi" options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={setVariations} />
+            {/* Fix for line 254 */}
+            <OptionSelector title="3. Jumlah Variasi" options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={(v) => setVariations(v as number)} />
 
              <div>
                 <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">4. (Opsional) Instruksi Tambahan</label>
