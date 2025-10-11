@@ -42,6 +42,11 @@ const DashboardIcon = () => (
 const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver }) => {
   const { user, profile, login, logout } = useAuth();
 
+  const handleLogout = () => {
+    logout();
+    onGoHome();
+  };
+
   return (
     <header className="container mx-auto max-w-7xl mt-4 py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
       <div className="flex flex-col sm:flex-row items-center justify-between">
@@ -83,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver })
                 </button>
               )}
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500/100 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                 aria-label="Logout"
               >
