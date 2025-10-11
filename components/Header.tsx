@@ -62,12 +62,9 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver })
         <div className="mt-4 sm:mt-0 flex items-center gap-4">
           {user ? (
             <>
-              <div className="text-right hidden sm:block">
-                  <span className="text-white text-sm" aria-label="User welcome">
-                    Halo, {profile?.full_name || user.email}
-                  </span>
+              <div className="hidden sm:flex items-center gap-4">
                   {profile && !profile.is_admin && (
-                    <div className="w-40 mt-1">
+                    <div className="w-40">
                       <ProgressBar
                         value={profile.generation_count}
                         limit={profile.generation_limit}
@@ -75,6 +72,9 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver })
                       />
                     </div>
                   )}
+                  <span className="text-white text-sm whitespace-nowrap" aria-label="User welcome">
+                    Halo, {profile?.full_name || user.email}
+                  </span>
               </div>
 
               {profile?.is_admin && (
