@@ -6,7 +6,7 @@ export type ModelGender = 'woman' | 'man';
 
 export type VehicleType = 'mobil' | 'motor';
 
-export type AutomotiveModification = 'none' | 'elegant_luxury' | 'racing_team';
+export type AutomotiveModification = 'none' | 'elegant_luxury' | 'racing_team' | 'custom';
 
 export type CarColor = 'original' | 'metallic_black' | 'pearl_white' | 'candy_red' | 'gunmetal_gray' | 'electric_blue' | 'custom';
 

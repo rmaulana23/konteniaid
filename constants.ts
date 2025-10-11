@@ -39,6 +39,7 @@ export const AUTOMOTIVE_MODIFICATION_OPTIONS: SelectOption<AutomotiveModificatio
     { value: 'none', label: 'No Modifikasi' },
     { value: 'elegant_luxury', label: 'Elegant Luxury' },
     { value: 'racing_team', label: 'Racing Team' },
+    { value: 'custom', label: 'Custom' },
 ];
 
 export const CAR_COLOR_OPTIONS: SelectOption<CarColor>[] = [
@@ -66,4 +67,9 @@ export const VARIATION_OPTIONS: SelectOption<number>[] = [
   { value: 1, label: '1 Variasi' },
   { value: 2, label: '2 Variasi' },
   { value: 3, label: '3 Variasi' },
+];
+
+export const YES_NO_OPTIONS: SelectOption<'yes' | 'no'>[] = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'no', label: 'No' },
 ];

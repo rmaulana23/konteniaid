@@ -35,6 +35,7 @@ import {
   VEHICLE_TYPE_OPTIONS,
   COLOR_TONE_OPTIONS,
   VARIATION_OPTIONS,
+  YES_NO_OPTIONS,
 } from './constants';
 
 type Page = 'landing' | 'category' | 'generator' | 'dashboard';
@@ -59,6 +60,13 @@ const App: React.FC = () => {
   const [colorTone, setColorTone] = useState<ColorTone>('natural');
   const [customPrompt, setCustomPrompt] = useState('');
   const [customCarColor, setCustomCarColor] = useState('');
+
+  // Custom Automotive Mod State
+  const [spoiler, setSpoiler] = useState<'yes' | 'no'>('no');
+  const [wideBody, setWideBody] = useState<'yes' | 'no'>('no');
+  const [rims, setRims] = useState<'yes' | 'no'>('no');
+  const [hood, setHood] = useState<'yes' | 'no'>('no');
+
 
   // Generation State
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -98,6 +106,10 @@ const App: React.FC = () => {
     setColorTone('natural');
     setCustomPrompt('');
     setCustomCarColor('');
+    setSpoiler('no');
+    setWideBody('no');
+    setRims('no');
+    setHood('no');
   };
 
   const handleGoHome = () => {
@@ -153,7 +165,11 @@ const App: React.FC = () => {
         vehicleType,
         customPrompt,
         customCarColor,
-        colorTone
+        colorTone,
+        spoiler,
+        wideBody,
+        rims,
+        hood
       );
       setGeneratedImages(newImages);
 
@@ -220,21 +236,27 @@ const App: React.FC = () => {
           <div className="lg:col-span-1 space-y-6 bg-gray-50 p-6 rounded-lg border">
             <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
             
-            {/* Fix for line 223 */}
             <OptionSelector title="2. Pilih Gaya Iklan" options={adStyleOptions} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v as AdStyle)} />
 
             {selectedCategory === 'fashion_lifestyle' && (
-              // Fix for line 226
               <OptionSelector title="Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v as ModelGender)} />
             )}
 
             {selectedCategory === 'automotive' && (
               <>
-                {/* Fix for line 231 */}
                 <OptionSelector title="Jenis Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)} />
-                {/* Fix for line 232 */}
                 <OptionSelector title="Pilih Modifikasi" options={AUTOMOTIVE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v as AutomotiveModification)} />
-                {/* Fix for line 233 */}
+                
+                {vehicleType === 'mobil' && automotiveModification === 'custom' && (
+                    <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="font-semibold text-gray-800 -mb-2">Detail Modifikasi Custom:</h4>
+                        <OptionSelector title="Spoiler" options={YES_NO_OPTIONS} selectedValue={spoiler} onValueChange={(v) => setSpoiler(v as 'yes' | 'no')} />
+                        <OptionSelector title="Wide Body" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v as 'yes' | 'no')} />
+                        <OptionSelector title="Rims/Velg" options={YES_NO_OPTIONS} selectedValue={rims} onValueChange={(v) => setRims(v as 'yes' | 'no')} />
+                        <OptionSelector title="Hood" options={YES_NO_OPTIONS} selectedValue={hood} onValueChange={(v) => setHood(v as 'yes' | 'no')} />
+                    </div>
+                )}
+
                 <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={(v) => setCarColor(v as CarColor)} />
                 {carColor === 'custom' && (
                     <div>
@@ -253,11 +275,9 @@ const App: React.FC = () => {
             )}
 
             {selectedCategory === 'food_beverage' && (
-                // Fix for line 251
                 <OptionSelector title="Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v as ColorTone)} />
             )}
 
-            {/* Fix for line 254 */}
             <OptionSelector title="3. Jumlah Variasi" options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={(v) => setVariations(v as number)} />
 
              <div>

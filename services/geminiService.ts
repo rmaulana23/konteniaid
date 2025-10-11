@@ -33,7 +33,21 @@ const fileToGenerativePart = async (file: File) => {
   };
 };
 
-const getPrompt = (category: ProductCategory, adStyle: AdStyle, modelGender?: ModelGender, automotiveModification?: AutomotiveModification, carColor?: CarColor, vehicleType?: VehicleType, customPrompt?: string, customCarColor?: string, colorTone?: ColorTone): string => {
+const getPrompt = (
+    category: ProductCategory, 
+    adStyle: AdStyle, 
+    modelGender?: ModelGender, 
+    automotiveModification?: AutomotiveModification, 
+    carColor?: CarColor, 
+    vehicleType?: VehicleType, 
+    customPrompt?: string, 
+    customCarColor?: string, 
+    colorTone?: ColorTone,
+    spoiler?: 'yes' | 'no',
+    wideBody?: 'yes' | 'no',
+    rims?: 'yes' | 'no',
+    hood?: 'yes' | 'no'
+): string => {
     let basePrompt = '';
 
     // Logika khusus untuk Fashion & Lifestyle
@@ -107,6 +121,17 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                         break;
                     case 'racing_team':
                         modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified. The main visual change is a full professional widebody race kit, including drastically redesigned aerodynamic bumpers and a large rear wing. Also, apply a full body custom racing team livery, fit it with aggressive racing wheels, and lower the suspension for a track-ready stance.';
+                        break;
+                    case 'custom':
+                        const customMods: string[] = [];
+                        if (spoiler === 'yes') customMods.push('a custom rear spoiler (choose a style that fits the car, e.g., ducktail, wing, or lip spoiler)');
+                        if (wideBody === 'yes') customMods.push('a custom widebody kit with flared wheel arches');
+                        if (rims === 'yes') customMods.push('large, high-end custom aftermarket wheels/rims');
+                        if (hood === 'yes') customMods.push('a custom hood, for example one with vents or a scoop');
+                        
+                        if (customMods.length > 0) {
+                            modificationPrompt = `In addition to the scene, the vehicle must be modified with the following custom parts: ${customMods.join(', ')}. Also, lower the car's suspension for a clean, stanced look. Ensure the modifications are integrated seamlessly and look realistic.`;
+                        }
                         break;
                 }
             }
@@ -213,13 +238,17 @@ export const generateAdPhotos = async (
   vehicleType?: VehicleType,
   customPrompt?: string,
   customCarColor?: string,
-  colorTone?: ColorTone
+  colorTone?: ColorTone,
+  spoiler?: 'yes' | 'no',
+  wideBody?: 'yes' | 'no',
+  rims?: 'yes' | 'no',
+  hood?: 'yes' | 'no'
 ): Promise<string[]> => {
   try {
     const genAI = initAi();
     const imagePart = await fileToGenerativePart(imageFile);
     const generatedImages: string[] = [];
-    const textPrompt = getPrompt(category, adStyle, modelGender, automotiveModification, carColor, vehicleType, customPrompt, customCarColor, colorTone);
+    const textPrompt = getPrompt(category, adStyle, modelGender, automotiveModification, carColor, vehicleType, customPrompt, customCarColor, colorTone, spoiler, wideBody, rims, hood);
 
     for (let i = 0; i < variations; i++) {
         const response = await genAI.models.generateContent({
