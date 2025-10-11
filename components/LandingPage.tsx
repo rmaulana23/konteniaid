@@ -105,7 +105,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                     >
                         Coba GRATIS Sekarang
                     </button>
-                    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3x Percobaan tanpa login.</p>
+                    
                 </div>
                 {/* Right Column: Image Slider */}
                 <div>
