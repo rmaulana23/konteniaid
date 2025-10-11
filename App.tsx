@@ -23,7 +23,7 @@ const BackIcon = () => (
 );
 
 const App: React.FC = () => {
-  const { user, profile, loading } = useAuth();
+  const { user, profile, setProfile, loading } = useAuth(); // Get setProfile
   const [currentView, setCurrentView] = useState<View>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
@@ -217,14 +217,19 @@ const App: React.FC = () => {
       setGeneratedImages(images);
       
       if (user && profile) {
-          // Update hitungan untuk pengguna yang login
           const newCount = profile.generation_count + 1;
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ generation_count: newCount })
             .eq('id', user.id);
-          if (updateError) console.error('Gagal update hitungan pengguna:', updateError);
-          // Refresh profile data locally might be needed here, but auth context handles it on next load
+            
+          if (updateError) {
+             console.error('Gagal update hitungan pengguna:', updateError);
+             setError('Gagal menyimpan progres Anda. Coba lagi.');
+          } else {
+             // PERBAIKAN: Update state lokal secara langsung untuk umpan balik instan
+             setProfile({ ...profile, generation_count: newCount });
+          }
       } else if (deviceId) {
         // Update hitungan untuk tamu
         const newCount = guestGenerations + 1;

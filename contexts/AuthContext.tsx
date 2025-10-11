@@ -15,6 +15,7 @@ export interface Profile {
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>; // Exposed setter
   session: Session | null;
   loading: boolean;
   login: () => void;
@@ -37,7 +38,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUser(currentUser);
 
         if (currentUser) {
-            // PERBAIKAN: Menggunakan RPC untuk mengambil profil dengan aman
             const { data: userProfile, error } = await supabase
               .rpc('get_my_profile')
               .single();
@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               console.error("Error fetching profile via RPC:", error);
             }
             
-            setProfile(userProfile);
+            setProfile(userProfile as Profile | null);
         } else {
             setProfile(null);
         }
@@ -79,6 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const value = {
     user,
     profile,
+    setProfile, // Provide setter to the context
     session,
     loading,
     login,
