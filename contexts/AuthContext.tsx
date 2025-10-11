@@ -35,27 +35,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
         try {
-          setSession(session);
           const currentUser = session?.user ?? null;
-          setUser(currentUser);
 
           if (currentUser) {
-              const { data: userProfile, error } = await supabase
-                .rpc('get_my_profile')
-                .single();
+            // Pengguna memiliki sesi yang valid, sekarang kita HARUS mengambil profil mereka.
+            const { data: userProfile, error } = await supabase
+              .rpc('get_my_profile')
+              .single();
 
-              if (error) {
-                console.error("Error fetching profile via RPC:", error);
-              }
-              
-              setProfile(userProfile as Profile | null);
+            if (error || !userProfile) {
+              // INI ADALAH BAGIAN PENTING: Jika profil gagal diambil, jangan biarkan pengguna dalam keadaan "setengah login".
+              // Lakukan logout paksa untuk memastikan state aplikasi tetap konsisten.
+              console.error("Gagal mengambil profil pengguna atau profil tidak ada. Melakukan logout paksa.", error);
+              await supabase.auth.signOut();
+              // Setelah signOut, listener ini akan dipanggil lagi dengan session null,
+              // yang akan ditangani oleh blok 'else' di bawah untuk membersihkan state.
+              // Kita hentikan eksekusi saat ini.
+              return;
+            }
+            
+            // HANYA JIKA profil berhasil diambil, kita set semua state login.
+            setSession(session);
+            setUser(currentUser);
+            setProfile(userProfile as Profile);
           } else {
-              setProfile(null);
+            // Jika tidak ada sesi atau pengguna, bersihkan semua state.
+            setSession(null);
+            setUser(null);
+            setProfile(null);
           }
         } catch (error) {
-          console.error("An error occurred in the auth state change handler:", error);
-          setProfile(null); // Reset profile on error as a safeguard
+          console.error("Terjadi error tak terduga di onAuthStateChange, membersihkan sesi:", error);
+          setSession(null);
+          setUser(null);
+          setProfile(null);
         } finally {
+          // Pastikan loading selalu diatur ke false setelah proses selesai.
           setLoading(false);
         }
       }
@@ -65,6 +80,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       subscription.unsubscribe();
     };
   }, []);
+
 
   const login = async () => {
     await supabase.auth.signInWithOAuth({
