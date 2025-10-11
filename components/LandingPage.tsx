@@ -162,7 +162,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-brand-primary to-teal-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Penawaran Terbaik</div>
                         <h3 className="text-2xl font-semibold text-gray-900">Akses Penuh Selamanya</h3>
                         <p className="text-5xl font-extrabold my-4 text-gray-900">
-                            Rp 129rb
+                            Rp 110rb
                         </p>
                         <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Pembayaran Sekali Saja</p>
                         <ul className="space-y-3 text-left text-gray-600 max-w-xs mx-auto">

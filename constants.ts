@@ -67,9 +67,3 @@ export const VARIATION_OPTIONS: SelectOption<number>[] = [
   { value: 2, label: '2 Variasi' },
   { value: 3, label: '3 Variasi' },
 ];
-
-export const ACCESS_CODES: Record<ProductCategory, string> = {
-    'food_beverage': 'mm99',
-    'fashion_lifestyle': 'fl88',
-    'automotive': 'ot77',
-};

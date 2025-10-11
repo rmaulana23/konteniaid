@@ -8,29 +8,26 @@ import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
 import PaymentModal from './components/PaymentModal';
 import CategorySelectorPage from './components/CategorySelectorPage';
-import AccessCodeModal from './components/AccessCodeModal'; // Import new component
+import Dashboard from './components/Dashboard'; // Import Dashboard
+import ProgressBar from './components/ProgressBar';
 import { useAuth } from './contexts/AuthContext';
 import { generateAdPhotos } from './services/geminiService';
-import { PRODUCT_CATEGORIES, AD_STYLES, VARIATION_OPTIONS, FASHION_AD_STYLES, MODEL_GENDER_OPTIONS, AUTOMOTIVE_AD_STYLES, AUTOMOTIVE_MODIFICATION_OPTIONS, CAR_COLOR_OPTIONS, VEHICLE_TYPE_OPTIONS, COLOR_TONE_OPTIONS, ACCESS_CODES } from './constants';
+import { supabase } from './services/supabase';
+import { PRODUCT_CATEGORIES, AD_STYLES, VARIATION_OPTIONS, FASHION_AD_STYLES, MODEL_GENDER_OPTIONS, AUTOMOTIVE_AD_STYLES, AUTOMOTIVE_MODIFICATION_OPTIONS, CAR_COLOR_OPTIONS, VEHICLE_TYPE_OPTIONS, COLOR_TONE_OPTIONS } from './constants';
 import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone } from './types';
 
-type View = 'landing' | 'category_selection' | 'tool';
+type View = 'landing' | 'category_selection' | 'tool' | 'dashboard'; // Tambahkan 'dashboard'
 
 const BackIcon = () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
 );
 
 const App: React.FC = () => {
-  const { user, login, purchase } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [currentView, setCurrentView] = useState<View>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   
-  // Access Code Modal State
-  const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
-  const [categoryToUnlock, setCategoryToUnlock] = useState<ProductCategory | null>(null);
-  const [accessCodeError, setAccessCodeError] = useState<string | null>(null);
-
-  // New robust guest tracking
+  // Guest tracking now uses Supabase
   const [deviceId, setDeviceId] = useState<string | null>(null);
   const [guestGenerations, setGuestGenerations] = useState<number>(0);
   const [isTrialOver, setIsTrialOver] = useState(false);
@@ -55,7 +52,6 @@ const App: React.FC = () => {
   const [infoMessage, setInfoMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initialize or retrieve the unique device ID
     let id = localStorage.getItem('deviceId');
     if (!id) {
         id = crypto.randomUUID();
@@ -63,12 +59,20 @@ const App: React.FC = () => {
     }
     setDeviceId(id);
 
-    // Load guest generation count based on this ID
-    const usageDataStr = localStorage.getItem('guestUsageData');
-    const usageData = usageDataStr ? JSON.parse(usageDataStr) : {};
-    const currentCount = usageData[id] || 0;
-    setGuestGenerations(currentCount);
-  }, []);
+    const fetchGuestUsage = async (currentId: string) => {
+        const { data } = await supabase
+            .from('guest_usage')
+            .select('generation_count')
+            .eq('device_id', currentId)
+            .single();
+        
+        setGuestGenerations(data?.generation_count || 0);
+    };
+    
+    if (id && !user) { // Only fetch guest usage if not logged in
+        fetchGuestUsage(id);
+    }
+  }, [user]);
 
   useEffect(() => {
     // Determine if the guest's trial is over
@@ -117,42 +121,14 @@ const App: React.FC = () => {
   };
   
   const handleCategorySelect = (category: ProductCategory) => {
-    if (isTrialOver) {
-      // If trial is over, user must provide an access code.
-      setCategoryToUnlock(category);
-      setIsAccessCodeModalOpen(true);
-      setAccessCodeError(null);
-    } else {
-      // During trial, grant direct access to the tool.
-      setProductCategory(category);
-      setCurrentView('tool');
-    }
-  };
-
-  const handleAccessCodeSubmit = (code: string) => {
-    if (categoryToUnlock && code.toLowerCase() === ACCESS_CODES[categoryToUnlock]) {
-        setProductCategory(categoryToUnlock);
-        setCurrentView('tool');
-        setIsAccessCodeModalOpen(false);
-        setCategoryToUnlock(null);
-        setAccessCodeError(null);
-        // Reset guest counter on successful code entry, as this is proof of access
-        if (deviceId) {
-            const usageDataStr = localStorage.getItem('guestUsageData');
-            const usageData = usageDataStr ? JSON.parse(usageDataStr) : {};
-            usageData[deviceId] = 0;
-            localStorage.setItem('guestUsageData', JSON.stringify(usageData));
-            setGuestGenerations(0);
-        }
-    } else {
-        setAccessCodeError('Kode akses salah. Silakan coba lagi.');
-    }
+    setProductCategory(category);
+    setCurrentView('tool');
   };
   
   const handleSuccessfulPayment = () => {
     setIsPaymentModalOpen(false);
     setError(null);
-    setInfoMessage("Silakan kirim bukti transfer Anda via WhatsApp. Kode akses akan dikirimkan setelah pembayaran diverifikasi.");
+    setInfoMessage("Silakan kirim bukti transfer Anda via WhatsApp. Akses akan diaktifkan di akun Anda setelah pembayaran diverifikasi.");
   };
 
   const handleBackToCategorySelect = () => {
@@ -165,9 +141,7 @@ const App: React.FC = () => {
     setColorTone('natural');
   };
 
-  const handleGoHome = () => {
-    setCurrentView('landing');
-    // Reset all tool-related states to their defaults
+  const resetToolState = () => {
     setUploadedImage(null);
     setUploadedImagePreview(null);
     setProductCategory('food_beverage');
@@ -185,6 +159,18 @@ const App: React.FC = () => {
     setInfoMessage(null);
   };
 
+  const handleGoHome = () => {
+    setCurrentView('landing');
+    resetToolState();
+  };
+  
+  const handleGoDashboard = () => {
+      if(profile?.is_admin) {
+        setCurrentView('dashboard');
+        resetToolState();
+      }
+  };
+
   const handleGenerate = async () => {
     if (!uploadedImage) {
       setError('Silakan upload foto produk terlebih dahulu.');
@@ -194,14 +180,22 @@ const App: React.FC = () => {
     setInfoMessage(null);
     setError(null);
 
-    if (isTrialOver) {
-        setError('Batas percobaan gratis Anda telah habis. Silakan lakukan pembayaran untuk melanjutkan.');
-        setIsPaymentModalOpen(true);
-        return;
+    // Cek kuota pengguna yang sudah login
+    if (user && profile) {
+        if (!profile.paid_status && profile.generation_count >= profile.generation_limit) {
+            setError('Batas percobaan gratis Anda telah habis. Silakan selesaikan pembayaran untuk melanjutkan.');
+            setIsPaymentModalOpen(true);
+            return;
+        }
+        if (profile.paid_status && profile.generation_count >= profile.generation_limit) {
+            setError('Anda telah mencapai batas maksimum generasi untuk saat ini.');
+            return;
+        }
     }
     
-    if (user && !user.paid) {
-        setError('Akun Anda belum memiliki akses penuh. Silakan selesaikan pembayaran.');
+    // Cek kuota tamu
+    if (isTrialOver) {
+        setError('Batas percobaan gratis Anda telah habis. Silakan login atau lakukan pembayaran untuk melanjutkan.');
         setIsPaymentModalOpen(true);
         return;
     }
@@ -222,16 +216,27 @@ const App: React.FC = () => {
       );
       setGeneratedImages(images);
       
-      if (!user && deviceId) {
-        const usageDataStr = localStorage.getItem('guestUsageData');
-        const usageData = usageDataStr ? JSON.parse(usageDataStr) : {};
-        const newCount = (usageData[deviceId] || 0) + 1;
-        usageData[deviceId] = newCount;
-        localStorage.setItem('guestUsageData', JSON.stringify(usageData));
+      if (user && profile) {
+          // Update hitungan untuk pengguna yang login
+          const newCount = profile.generation_count + 1;
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ generation_count: newCount })
+            .eq('id', user.id);
+          if (updateError) console.error('Gagal update hitungan pengguna:', updateError);
+          // Refresh profile data locally might be needed here, but auth context handles it on next load
+      } else if (deviceId) {
+        // Update hitungan untuk tamu
+        const newCount = guestGenerations + 1;
+        const { error: upsertError } = await supabase
+          .from('guest_usage')
+          .upsert({ device_id: deviceId, generation_count: newCount });
+
+        if (upsertError) console.error('Gagal update penggunaan tamu:', upsertError);
         setGuestGenerations(newCount);
         
         if (newCount >= GUEST_LIMIT) {
-           setError('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan lakukan pembayaran.');
+           setError('Batas percobaan gratis Anda telah habis. Untuk generate selanjutnya, silakan login atau lakukan pembayaran.');
         }
       }
 
@@ -262,6 +267,21 @@ const App: React.FC = () => {
   };
 
   const isGenerateDisabled = isLoading || !uploadedImage;
+  
+  if (loading) {
+    return (
+        <div className="min-h-screen flex flex-col bg-brand-background">
+            <Header onGoHome={handleGoHome} onGoDashboard={handleGoDashboard} />
+            <div className="flex-grow flex items-center justify-center">
+                 <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-md min-h-[400px] border border-gray-200">
+                    <svg className="animate-spin h-10 w-10 text-brand-secondary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <p className="text-gray-700 font-semibold">Memuat Sesi...</p>
+                </div>
+            </div>
+            <Footer />
+        </div>
+    );
+  }
 
   const renderView = () => {
     switch(currentView) {
@@ -269,6 +289,9 @@ const App: React.FC = () => {
         return <LandingPage onStart={() => setCurrentView('category_selection')} onGetAccess={handleGetAccess} />;
       case 'category_selection':
         return <CategorySelectorPage onSelectCategory={handleCategorySelect} />;
+      case 'dashboard':
+        // Melindungi route dashboard
+        return profile?.is_admin ? <Dashboard /> : <LandingPage onStart={() => setCurrentView('category_selection')} onGetAccess={handleGetAccess} />;
       case 'tool':
         return (
           <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
@@ -277,8 +300,7 @@ const App: React.FC = () => {
                 <div className="space-y-5">
                    <button 
                     onClick={handleBackToCategorySelect} 
-                    disabled={isTrialOver}
-                    className="w-full text-sm text-gray-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500"
+                    className="w-full text-sm text-gray-700 font-semibold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors duration-300 bg-gray-100 hover:bg-gray-200"
                    >
                       <BackIcon /> Ganti Kategori
                    </button>
@@ -303,6 +325,12 @@ const App: React.FC = () => {
                       <textarea id="custom-prompt" value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)} placeholder="tambahkan efek tertentu" className="w-full bg-white border border-gray-300 text-gray-900 py-3 px-4 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors" rows={3} aria-label="Custom Prompt (Opsional)" />
                   </div>
                   <OptionSelector title={`${getStepNumber('variation')}. Jumlah Variasi`} options={VARIATION_OPTIONS} selectedValue={variations} onValueChange={(value) => setVariations(value as number)} />
+                  {user && profile && (
+                    <div className="w-full">
+                      <p className="text-center text-sm text-gray-600 mb-1">Kuota Tersisa:</p>
+                      <ProgressBar value={profile.generation_count} limit={profile.generation_limit} />
+                    </div>
+                  )}
                   {!user && (
                       <div className="text-center text-sm text-gray-600 bg-gray-100 p-3 rounded-md">
                           Sisa percobaan gratis: <strong>{Math.max(0, GUEST_LIMIT - guestGenerations)}</strong>
@@ -342,24 +370,13 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-brand-background">
-      <Header onGoHome={handleGoHome} isTrialOver={isTrialOver} />
+      <Header onGoHome={handleGoHome} onGoDashboard={handleGoDashboard} isTrialOver={isTrialOver} />
       {renderView()}
       <PaymentModal 
         isOpen={isPaymentModalOpen}
-        onClose={() => {
-            if (!isTrialOver) {
-                setIsPaymentModalOpen(false)
-            }
-        }}
+        onClose={() => setIsPaymentModalOpen(false)}
         onSuccessfulPayment={handleSuccessfulPayment}
         isBlocking={isTrialOver}
-      />
-      <AccessCodeModal 
-        isOpen={isAccessCodeModalOpen}
-        onClose={() => setIsAccessCodeModalOpen(false)}
-        onSubmit={handleAccessCodeSubmit}
-        categoryName={categoryToUnlock ? PRODUCT_CATEGORIES.find(c => c.value === categoryToUnlock)?.label || '' : ''}
-        error={accessCodeError}
       />
       <Footer />
     </div>

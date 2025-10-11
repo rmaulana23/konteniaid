@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   onGoHome: () => void;
+  onGoDashboard: () => void; // Prop baru untuk navigasi ke dashboard
   isTrialOver?: boolean;
 }
 
@@ -32,9 +33,13 @@ const GoogleIcon = () => (
     </svg>
 );
 
+const DashboardIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+);
 
-const Header: React.FC<HeaderProps> = ({ onGoHome, isTrialOver }) => {
-  const { user, login, logout } = useAuth();
+
+const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, isTrialOver }) => {
+  const { user, profile, login, logout } = useAuth();
 
   return (
     <header className="container mx-auto max-w-7xl mt-4 py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
@@ -48,8 +53,41 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, isTrialOver }) => {
           <LogoIcon />
           <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
         </button>
-        <div className="mt-2 sm:mt-0">
-          {/* Login functionality is temporarily hidden. */}
+        <div className="mt-4 sm:mt-0 flex items-center gap-4">
+          {user ? (
+            <>
+              <span className="text-white text-sm hidden sm:block" aria-label="User welcome">
+                Halo, {profile?.full_name || user.email}
+              </span>
+              {profile?.is_admin && (
+                <button
+                  onClick={onGoDashboard}
+                  className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                  aria-label="Buka Dashboard Admin"
+                >
+                  <DashboardIcon />
+                  Dashboard
+                </button>
+              )}
+              <button
+                onClick={logout}
+                className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500/100 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                aria-label="Logout"
+              >
+                <LogoutIcon />
+                Logout
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={login}
+              className="flex items-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-2 px-4 rounded-lg transition-colors shadow-md"
+              aria-label="Login with Google"
+            >
+              <GoogleIcon />
+              Login dengan Google
+            </button>
+          )}
         </div>
       </div>
     </header>
