@@ -10,7 +10,8 @@ import Spinner from './components/Spinner';
 import PaymentModal from './components/PaymentModal';
 import AccessCodeModal from './components/AccessCodeModal';
 import Dashboard from './components/Dashboard';
-import FAQPage from './components/FAQPage'; // Import the new FAQ page component
+import FAQPage from './components/FAQPage';
+import NotificationToast from './components/NotificationToast'; // Import the new toast component
 
 import { useAuth, type Profile } from './contexts/AuthContext';
 import { supabase } from './services/supabase';
@@ -72,6 +73,7 @@ const App: React.FC = () => {
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
+  const [showTrialToast, setShowTrialToast] = useState(false); // State for the new notification
   
   // Guest State with Device ID
   const [deviceId, setDeviceId] = useState<string | null>(null);
@@ -100,6 +102,19 @@ const App: React.FC = () => {
       localStorage.setItem(`guestGenerationCount_${deviceId}`, guestGenerationCount.toString());
     }
   }, [guestGenerationCount, deviceId]);
+  
+  // Effect to show the trial notification once
+  useEffect(() => {
+    if (page === 'generator') {
+      const hasSeenToast = localStorage.getItem('hasSeenTrialNotification');
+      const isGuestUser = !hasValidAccessCode; // Simple check if user is a guest (doesn't have a valid code)
+
+      if (!hasSeenToast && isGuestUser) {
+        setShowTrialToast(true);
+        localStorage.setItem('hasSeenTrialNotification', 'true');
+      }
+    }
+  }, [page, hasValidAccessCode]);
 
 
   // Form State
@@ -518,6 +533,11 @@ const App: React.FC = () => {
         {renderPage()}
       </main>
       <Footer />
+      <NotificationToast
+        isVisible={showTrialToast}
+        message="Anda memiliki 3x kesempatan untuk mencoba generate foto secara gratis."
+        onClose={() => setShowTrialToast(false)}
+      />
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)} 
