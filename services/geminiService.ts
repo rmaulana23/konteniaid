@@ -49,7 +49,9 @@ const getPrompt = (
     hood?: 'yes' | 'no',
     allBumper?: 'yes' | 'no',
     livery?: LiveryStyle,
-    hasSticker?: boolean
+    hasSticker?: boolean,
+    hasPerson?: boolean,
+    personMode?: 'full_body' | 'face_only'
 ): string => {
     let basePrompt = '';
 
@@ -164,7 +166,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
 
                         let stickerPrompt = '';
                         if (hasSticker) {
-                            stickerPrompt = 'A second image has been uploaded which is a logo. Apply this logo as a realistic sponsor sticker onto the side of the car. It must look like a real vinyl decal, conforming to the car\'s body panels and affected by the scene\'s lighting and reflections.';
+                            stickerPrompt = 'A separate image of a logo has been uploaded. Apply this logo as a realistic sponsor sticker onto the side of the car. It must look like a real vinyl decal, conforming to the car\'s body panels and affected by the scene\'s lighting and reflections.';
                         }
                         
                         const allMods = [partsPrompt, liveryPrompt, stickerPrompt].filter(Boolean).join(' ');
@@ -197,8 +199,18 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
         }
 
         let driverPrompt = '';
-        if (adStyle === 'outdoor_golden_hour' || adStyle === 'cinematic_night' || adStyle === 'japanese_drifting') {
+        // Only add a generic AI driver if a specific person has NOT been uploaded.
+        if (!hasPerson && (adStyle === 'outdoor_golden_hour' || adStyle === 'cinematic_night' || adStyle === 'japanese_drifting')) {
             driverPrompt = `Since the vehicle is depicted in motion, either make the windows slightly dark/tinted for a mysterious look, OR add a photorealistic but non-descript AI person in the driver's seat as if they are driving. Do not add a person for static showroom scenes.`;
+        }
+        
+        let personPrompt = '';
+        if (hasPerson) {
+            if (personMode === 'face_only') {
+                personPrompt = `A separate image containing a person's face has been uploaded. You MUST generate a realistic, complete body for this face and integrate the person seamlessly into the scene. The person's pose should be natural and contextually appropriate for the car and the scene style (e.g., sitting in the driver's seat, leaning against the car, or standing next to it). The generated body, clothing, and proportions must look photorealistic and match the overall aesthetic of the advertisement.`;
+            } else { // 'full_body'
+                personPrompt = `A separate image containing a full-body person has been uploaded. You MUST extract this person from their original background and place them realistically into the generated scene with the vehicle. Ensure the person's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable image. The person should be interacting naturally with the car.`;
+            }
         }
 
 
@@ -206,6 +218,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
 ${colorPrompt}
 ${modificationPrompt}
 ${driverPrompt}
+${personPrompt}
 Place the vehicle in the following hyper-realistic scene: ${styleDescription}
 Add cinematic tone, soft smoke or mist for atmosphere, lens flares, depth of field, and photorealistic detail.
 Composition should emphasize the design, power, and premium quality of the vehicle.
@@ -243,13 +256,15 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
             }
         }
 
+        const presentationInstruction = `Product Presentation Rules: The uploaded product is the hero. If the product is in a snack bag or similar packaging, you have the creative freedom to open it to reveal the contents. However, for sealed products like bottles or cans, you MUST keep the packaging professional and closed. Enhance it with condensation or splashes instead. The AI should intelligently decide if opening the package is appropriate for the specific product to make it look its best.`;
+        
         const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
 
         basePrompt = `Generate a photorealistic professional advertisement photo based on the uploaded product image.
 Do not change the product itself, but place it in a new, hyper-realistic scene.
-IMPORTANT: If the uploaded product is in packaging (e.g., a snack bag, box, or bottle), creatively open the packaging to reveal the contents. Some of the product can be shown spilling out or arranged artfully around the open package to make it look delicious and appealing.
+${presentationInstruction}
 Make the product levitate elegantly in the center.
-Surround the levitating product with its key ingredients or related elements, juga floating dynamically.
+Surround the levitating product with its key ingredients or related elements, also floating dynamically.
 ${dynamicEffects}
 The scene style is: ${styleDetails}
 ${colorTonePrompt}
@@ -285,7 +300,9 @@ export const generateAdPhotos = async (
   hood?: 'yes' | 'no',
   allBumper?: 'yes' | 'no',
   livery?: LiveryStyle,
-  stickerFile?: File | null
+  stickerFile?: File | null,
+  personImageFile?: File | null,
+  personMode?: 'full_body' | 'face_only'
 ): Promise<string[]> => {
   try {
     const genAI = initAi();
@@ -294,16 +311,22 @@ export const generateAdPhotos = async (
     const textPrompt = getPrompt(
         category, adStyle, modelGender, automotiveModification, carColor, 
         vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
-        wideBody, rims, hood, allBumper, livery, !!stickerFile
+        wideBody, rims, hood, allBumper, livery, !!stickerFile,
+        !!personImageFile, personMode
     );
 
     const imagePart = await fileToGenerativePart(imageFile);
-    // FIX: The `contentParts` array was incorrectly inferred as containing only image parts, causing a type error when adding a text part. This has been refactored to build the array in a way that allows TypeScript to correctly infer the union type.
     const imageParts = [imagePart];
+    
     if (stickerFile) {
         const stickerImagePart = await fileToGenerativePart(stickerFile);
         imageParts.push(stickerImagePart);
     }
+    if (personImageFile) {
+        const personImagePart = await fileToGenerativePart(personImageFile);
+        imageParts.push(personImagePart);
+    }
+
     const contentParts = [...imageParts, { text: textPrompt }];
 
 

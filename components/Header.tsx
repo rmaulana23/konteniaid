@@ -5,6 +5,7 @@ import ProgressBar from './ProgressBar';
 interface HeaderProps {
   onGoHome: () => void;
   onGoDashboard: () => void;
+  onGoToFAQ: () => void; // Prop baru untuk ke halaman FAQ
   onUpgradeClick: () => void; // Prop baru untuk membuka modal pembayaran
   isTrialOver?: boolean;
 }
@@ -43,8 +44,12 @@ const UpgradeIcon = () => (
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
 );
 
+const FAQIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4 0 2.21-1.79 4-4 4-1.742 0-3.223-.835-3.772-2M12 18v.01"></path></svg>
+);
 
-const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick, isTrialOver }) => {
+
+const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onUpgradeClick, isTrialOver }) => {
   const { user, profile, login, logout } = useAuth();
 
   const handleLogout = () => {
@@ -70,6 +75,14 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
               <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
             </button>
             <div className="mt-4 sm:mt-0 flex items-center gap-4">
+              <button
+                onClick={onGoToFAQ}
+                className="flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                aria-label="Buka halaman FAQ"
+              >
+                
+                FAQ
+              </button>
               {/* --- START: Temporarily hidden login/user section --- */}
               {/*
               {user ? (

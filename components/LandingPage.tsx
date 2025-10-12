@@ -97,7 +97,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mt-2">Jadi Foto Iklan Profesional</span>
                     </h1>
                     <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-gray-600">
-                        Manfaatkan kekuatan AI untuk membuat foto iklan yang memukau.
+                        Manfaatkan kekuatan AI untuk membuat foto iklan.
                     </p>
                     <button
                         onClick={onStart}
