@@ -77,6 +77,8 @@ export const COLOR_TONE_OPTIONS: SelectOption<ColorTone>[] = [
 export const MODEL_GENDER_OPTIONS: SelectOption<ModelGender>[] = [
     { value: 'woman', label: 'Woman' },
     { value: 'man', label: 'Men' },
+    { value: 'kids', label: 'Kids' },
+    { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
 ];
 
 export const VARIATION_OPTIONS: SelectOption<number>[] = [

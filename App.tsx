@@ -12,6 +12,9 @@ import AccessCodeModal from './components/AccessCodeModal';
 import Dashboard from './components/Dashboard';
 import FAQPage from './components/FAQPage';
 import NotificationToast from './components/NotificationToast'; // Import the new toast component
+import TermsModal from './components/TermsModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+
 
 import { useAuth, type Profile } from './contexts/AuthContext';
 import { supabase } from './services/supabase';
@@ -72,6 +75,8 @@ const App: React.FC = () => {
   // App State
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
   const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
   const [showTrialToast, setShowTrialToast] = useState(false); // State for the new notification
   
@@ -145,6 +150,10 @@ const App: React.FC = () => {
   const [personImageFile, setPersonImageFile] = useState<File | null>(null);
   const [personImagePreview, setPersonImagePreview] = useState<string | null>(null);
   const [personMode, setPersonMode] = useState<'full_body' | 'face_only'>('full_body');
+  
+  // Custom Fashion Model State
+  const [customModelFile, setCustomModelFile] = useState<File | null>(null);
+  const [customModelPreview, setCustomModelPreview] = useState<string | null>(null);
 
 
   // Generation State
@@ -189,6 +198,8 @@ const App: React.FC = () => {
     setPersonImageFile(null);
     setPersonImagePreview(null);
     setPersonMode('full_body');
+    setCustomModelFile(null);
+    setCustomModelPreview(null);
   };
 
   const handleGoHome = () => {
@@ -256,6 +267,18 @@ const App: React.FC = () => {
     const previewUrl = URL.createObjectURL(file);
     setUploadedImagePreview(previewUrl);
   };
+  
+  const handleCustomModelUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+        setCustomModelFile(file);
+        const previewUrl = URL.createObjectURL(file);
+        setCustomModelPreview(previewUrl);
+    } else {
+        setCustomModelFile(null);
+        setCustomModelPreview(null);
+    }
+  };
 
   const handleStickerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -317,7 +340,8 @@ const App: React.FC = () => {
         livery,
         stickerFile,
         personImageFile,
-        personImageFile ? personMode : undefined
+        personImageFile ? personMode : undefined,
+        customModelFile
       );
       setGeneratedImages(images);
 
@@ -360,6 +384,16 @@ const App: React.FC = () => {
         const gridColsClass = selectedCategory === 'automotive' ? 'lg:grid-cols-4' : 'lg:grid-cols-3';
         const resultsColSpanClass = selectedCategory === 'automotive' ? 'lg:col-span-2' : 'lg:col-span-2';
 
+        const GenerateButton = (
+            <button
+              onClick={handleGenerateClick}
+              disabled={isLoading || !imageFile || isTrialOver}
+              className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? ( <> <Spinner /> Membuat Gambar... </> ) : ( 'Generate Foto Iklan' )}
+            </button>
+        );
+
         return (
           <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
             <div className="mb-6 text-sm text-gray-500">
@@ -381,6 +415,21 @@ const App: React.FC = () => {
                   <>
                     <OptionSelector title="2. Pilih Gaya Foto" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
                     <OptionSelector title="3. Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                    {modelGender === 'custom' && (
+                        <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
+                            <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
+                            <input 
+                                type="file" 
+                                onChange={handleCustomModelUpload}
+                                accept="image/png, image/jpeg" 
+                                className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
+                            />
+                            {customModelPreview && (
+                                <img src={customModelPreview} alt="Custom model preview" className="mt-2 h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
+                            )}
+                        </div>
+                    )}
                   </>
                 )}
 
@@ -389,34 +438,28 @@ const App: React.FC = () => {
                 )}
 
                 <OptionSelector
-                    title="3. Jumlah Variasi"
+                    title="4. Jumlah Hasil Variasi"
                     options={VARIATION_OPTIONS}
                     selectedValue={variations}
                     onValueChange={(v) => setVariations(v)}
                 />
                 
                 <div>
-                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">4. Kustomisasi (Opsional)</label>
+                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">5. Kustomisasi (Opsional)</label>
                   <textarea
                     id="custom-prompt"
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="Contoh: tambahkan efek asap di sekitar roda..."
+                    placeholder="Contoh: tambahkan efek tertentu"
                     className="w-full appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors"
                     rows={3}
                   />
                 </div>
-
-                <button
-                  onClick={handleGenerateClick}
-                  disabled={isLoading || !imageFile || isTrialOver}
-                  className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? ( <> <Spinner /> Membuat Gambar... </> ) : ( 'Generate Foto Iklan' )}
-                </button>
+                
+                {selectedCategory !== 'automotive' && GenerateButton}
               </div>
 
-              <div className={`${resultsColSpanClass} space-y-8`}>
+              <div className={`${resultsColSpanClass} space-y-8 ${selectedCategory === 'automotive' ? 'order-last lg:order-none' : ''}`}>
                  {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
                         <p className="font-bold">Terjadi Kesalahan</p>
@@ -438,7 +481,7 @@ const App: React.FC = () => {
                       <>
                         <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                         <h2 className="mt-4 text-xl font-bold text-gray-800">Hasil Foto Anda Akan Muncul di Sini</h2>
-                        <p className="text-gray-500 mt-1">Lengkapi semua opsi di sebelah kiri dan klik "Generate".</p>
+                        <p className="text-gray-500 mt-1">Lengkapi semua opsi dan baru klik "Generate".</p>
                       </>
                     )}
                   </div>
@@ -510,8 +553,10 @@ const App: React.FC = () => {
                             </div>
                         )}
                     </div>
+                    {GenerateButton}
                  </div>
               )}
+
             </div>
           </div>
         );
@@ -526,13 +571,18 @@ const App: React.FC = () => {
         onGoHome={handleGoHome} 
         onGoDashboard={() => setPage('dashboard')}
         onGoToFAQ={handleGoToFAQ}
+        onOpenTerms={() => setIsTermsModalOpen(true)}
+        onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
         onUpgradeClick={() => setIsPaymentModalOpen(true)}
         isTrialOver={isTrialOver}
       />
       <main className="flex-grow">
         {renderPage()}
       </main>
-      <Footer />
+      <Footer 
+        onOpenTerms={() => setIsTermsModalOpen(true)}
+        onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
+      />
       <NotificationToast
         isVisible={showTrialToast}
         message="Anda memiliki 3x kesempatan untuk mencoba generate foto secara gratis."
@@ -551,6 +601,8 @@ const App: React.FC = () => {
         onClose={() => setIsAccessCodeModalOpen(false)}
         onVerify={handleVerifyAccessCode}
       />
+      <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
+      <PrivacyPolicyModal isOpen={isPrivacyPolicyModalOpen} onClose={() => setIsPrivacyPolicyModalOpen(false)} />
     </div>
   );
 };

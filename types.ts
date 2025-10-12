@@ -2,7 +2,7 @@ export type ProductCategory = 'food_beverage' | 'fashion_lifestyle' | 'automotiv
 
 export type AdStyle = 'indoor_studio' | 'outdoor_golden_hour' | 'cinematic_night' | 'lifestyle_natural' | 'japanese_drifting' | 'city_street' | 'professional_kitchen';
 
-export type ModelGender = 'woman' | 'man';
+export type ModelGender = 'woman' | 'man' | 'kids' | 'custom';
 
 export type VehicleType = 'mobil' | 'motor';
 

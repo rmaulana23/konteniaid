@@ -51,7 +51,8 @@ const getPrompt = (
     livery?: LiveryStyle,
     hasSticker?: boolean,
     hasPerson?: boolean,
-    personMode?: 'full_body' | 'face_only'
+    personMode?: 'full_body' | 'face_only',
+    hasCustomModel?: boolean
 ): string => {
     let basePrompt = '';
 
@@ -75,9 +76,28 @@ const getPrompt = (
                 styleDescription = 'Studio Editorial Style – clean softbox lighting, minimal gradient background, elegant pose, neutral color tones, fashion catalog aesthetic.';
         }
         
-        const genderText = modelGender === 'man' ? 'male model' : 'female model';
+        let modelPrompt = '';
+        if (modelGender === 'custom' && hasCustomModel) {
+            modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}. The uploaded fashion product must be realistically placed ON this model, replacing whatever they were originally wearing. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
+        } else {
+            let genderText = '';
+            switch (modelGender) {
+                case 'man':
+                    genderText = 'male model';
+                    break;
+                case 'woman':
+                    genderText = 'female model';
+                    break;
+                case 'kids':
+                    genderText = 'child model (boy or girl, age around 6-10 years old, looking happy and natural)';
+                    break;
+                default:
+                    genderText = 'female model'; // Fallback
+            }
+            modelPrompt = `Make the product appear realistically worn or held by a stylish ${genderText}, photographed in the following commercial setting: ${styleDescription}`;
+        }
 
-        basePrompt = `Transform the uploaded product photo into a professional fashion and lifestyle advertisement mockup. Make the product appear realistically worn or held by a stylish ${genderText}, photographed in the following commercial setting: ${styleDescription}
+        basePrompt = `Transform the uploaded product photo into a professional fashion and lifestyle advertisement mockup. ${modelPrompt}
 Ensure the product remains the main focus, well-lit, and clearly visible. Add subtle depth of field, professional lighting, and realistic skin tone.
 The overall image should look like a premium ad campaign photo used for brand mockups or social media content.
 Ultra-realistic 8K resolution, high dynamic range, editorial photography quality, shallow depth of field, captured with 85mm lens, commercial lighting setup.
@@ -302,7 +322,8 @@ export const generateAdPhotos = async (
   livery?: LiveryStyle,
   stickerFile?: File | null,
   personImageFile?: File | null,
-  personMode?: 'full_body' | 'face_only'
+  personMode?: 'full_body' | 'face_only',
+  customModelFile?: File | null
 ): Promise<string[]> => {
   try {
     const genAI = initAi();
@@ -312,7 +333,7 @@ export const generateAdPhotos = async (
         category, adStyle, modelGender, automotiveModification, carColor, 
         vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
         wideBody, rims, hood, allBumper, livery, !!stickerFile,
-        !!personImageFile, personMode
+        !!personImageFile, personMode, !!customModelFile
     );
 
     const imagePart = await fileToGenerativePart(imageFile);
@@ -325,6 +346,10 @@ export const generateAdPhotos = async (
     if (personImageFile) {
         const personImagePart = await fileToGenerativePart(personImageFile);
         imageParts.push(personImagePart);
+    }
+    if (customModelFile) {
+        const customModelPart = await fileToGenerativePart(customModelFile);
+        imageParts.push(customModelPart);
     }
 
     const contentParts = [...imageParts, { text: textPrompt }];

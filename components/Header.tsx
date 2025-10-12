@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import ProgressBar from './ProgressBar';
 
 interface HeaderProps {
   onGoHome: () => void;
   onGoDashboard: () => void;
-  onGoToFAQ: () => void; // Prop baru untuk ke halaman FAQ
-  onUpgradeClick: () => void; // Prop baru untuk membuka modal pembayaran
+  onGoToFAQ: () => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
+  onUpgradeClick: () => void;
   isTrialOver?: boolean;
 }
 
@@ -48,9 +50,18 @@ const FAQIcon = () => (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.79 4 4 0 2.21-1.79 4-4 4-1.742 0-3.223-.835-3.772-2M12 18v.01"></path></svg>
 );
 
+const MenuIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+);
 
-const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onUpgradeClick, isTrialOver }) => {
+const CloseIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+);
+
+
+const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onOpenTerms, onOpenPrivacy, onUpgradeClick, isTrialOver }) => {
   const { user, profile, login, logout } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -64,7 +75,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onU
         {/* The header is full-width within the padded parent, with rounded corners and shadow for a floating effect. */}
         <header className="w-full rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
           {/* This inner div constrains the content to a max-width and centers it. */}
-          <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between">
+          <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-row items-center justify-between">
             <button
               onClick={onGoHome}
               disabled={isTrialOver}
@@ -74,15 +85,44 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onU
               <LogoIcon />
               <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
             </button>
-            <div className="mt-4 sm:mt-0 flex items-center gap-4">
+            <div className="relative flex items-center gap-4">
+              {/* Desktop Menu */}
               <button
                 onClick={onGoToFAQ}
-                className="flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="hidden sm:flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                 aria-label="Buka halaman FAQ"
               >
-                
-                FAQ
+                <b>FAQ</b>
               </button>
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="sm:hidden text-white p-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label="Buka menu"
+                aria-expanded={isMobileMenuOpen}
+              >
+                {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+              </button>
+
+              {/* Mobile Menu Dropdown */}
+              {isMobileMenuOpen && (
+                  <div className="sm:hidden absolute top-full right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-30 ring-1 ring-black ring-opacity-5">
+                      <a
+                          onClick={() => { onGoToFAQ(); setIsMobileMenuOpen(false); }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >FAQ</a>
+                      <a
+                          onClick={() => { onOpenTerms(); setIsMobileMenuOpen(false); }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >Syarat & Ketentuan</a>
+                      <a
+                          onClick={() => { onOpenPrivacy(); setIsMobileMenuOpen(false); }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >Kebijakan Privasi</a>
+                  </div>
+              )}
+
               {/* --- START: Temporarily hidden login/user section --- */}
               {/*
               {user ? (

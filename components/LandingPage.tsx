@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface LandingPageProps {
   onStart: () => void;
@@ -13,9 +13,9 @@ const CheckIcon = () => (
 
 // Self-contained interactive slider component
 const ImageComparisonSlider: React.FC<{ beforeImage: string; afterImage: string }> = ({ beforeImage, afterImage }) => {
-    const [sliderPosition, setSliderPosition] = React.useState(50);
-    const [isDragging, setIsDragging] = React.useState(false);
-    const imageContainerRef = React.useRef<HTMLDivElement>(null);
+    const [sliderPosition, setSliderPosition] = useState(50);
+    const [isDragging, setIsDragging] = useState(false);
+    const imageContainerRef = useRef<HTMLDivElement>(null);
 
     const handleMove = (clientX: number) => {
         if (!imageContainerRef.current) return;
@@ -38,7 +38,7 @@ const ImageComparisonSlider: React.FC<{ beforeImage: string; afterImage: string 
     const handleMouseDown = () => setIsDragging(true);
     const handleMouseUp = () => setIsDragging(false);
 
-    React.useEffect(() => {
+    useEffect(() => {
         const upHandler = () => setIsDragging(false);
         window.addEventListener('mouseup', upHandler);
         window.addEventListener('touchend', upHandler);
@@ -82,7 +82,31 @@ const ImageComparisonSlider: React.FC<{ beforeImage: string; afterImage: string 
 };
 
 
+const sliderData = [
+  {
+    id: 'automotive',
+    label: 'Otomotif',
+    beforeImage: 'https://i.imgur.com/ty0kRlb.jpg',
+    afterImage: 'https://i.imgur.com/O8s6MRU.jpg',
+  },
+  {
+    id: 'fashion',
+    label: 'Fashion',
+    beforeImage: 'https://imgur.com/wZdhOGV.jpg',
+    afterImage: 'https://imgur.com/NvysNas.jpg',
+  },
+  {
+    id: 'food',
+    label: 'Makanan',
+    beforeImage: 'https://imgur.com/aerRGqc.jpg',
+    afterImage: 'https://imgur.com/YME9uqW.jpg',
+  },
+];
+
 const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
+  const [activeSlider, setActiveSlider] = useState('automotive');
+  const currentSlider = sliderData.find(s => s.id === activeSlider) || sliderData[0];
+
   return (
     <main className="flex-grow w-full bg-brand-background text-gray-900">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl w-full">
@@ -93,11 +117,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                 {/* Left Column: CTA */}
                 <div className="text-center lg:text-left">
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900">
-                        Bikin Foto Biasa
-                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mt-2">Jadi Foto Iklan Profesional</span>
+                        Ubah Foto Biasa
+                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mt-2">Jadi Luar Biasa</span>
                     </h1>
                     <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-gray-600">
-                        Manfaatkan kekuatan AI untuk membuat foto iklan.
+                        Manfaatkan kekuatan AI untuk membuat foto biasa jadi foto iklan yang Profesional.
                     </p>
                     <button
                         onClick={onStart}
@@ -109,9 +133,24 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                 </div>
                 {/* Right Column: Image Slider */}
                 <div>
+                     <div className="flex justify-center gap-2 mb-4">
+                        {sliderData.map(slider => (
+                            <button
+                                key={slider.id}
+                                onClick={() => setActiveSlider(slider.id)}
+                                className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                                    activeSlider === slider.id
+                                    ? 'bg-brand-primary text-white shadow'
+                                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                }`}
+                                >
+                                {slider.label}
+                            </button>
+                        ))}
+                    </div>
                      <ImageComparisonSlider
-                        beforeImage="https://i.imgur.com/ty0kRlb.jpg"
-                        afterImage="https://i.imgur.com/O8s6MRU.jpg"
+                        beforeImage={currentSlider.beforeImage}
+                        afterImage={currentSlider.afterImage}
                     />
                 </div>
             </div>
@@ -163,10 +202,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                         <h3 className="text-2xl font-semibold text-gray-900">Akses Uji Coba</h3>
                         <div className="flex items-end justify-center gap-2 my-4">
                             <p className="text-2xl font-medium text-gray-500 line-through">
-                                Rp 129rb
+                                Rp 149rb
                             </p>
                             <p className="text-5xl font-extrabold text-gray-900">
-                                Rp 79rb
+                                Rp 90rb
                             </p>
                         </div>
                         <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 50 orang pertama</p>

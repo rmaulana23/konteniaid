@@ -16,7 +16,7 @@ const faqData = [
   },
   {
     question: 'Berapa lama kode akses saya berlaku?',
-    answer: 'Kode akses yang Anda beli saat ini memberikan Anda batas penggunaan harian (50 generasi per hari selama Early Access). Batas ini akan di-reset setiap hari. Ini bukan sistem langganan, jadi Anda hanya membayar sekali untuk akses berkelanjutan dengan batas harian tersebut.'
+    answer: 'Kode akses yang Anda beli saat ini selama masa Early Access (Uji Coba) bisa Anda gunakan tiap hari. Ini bukan sistem langganan, jadi Anda hanya membayar sekali untuk akses semua fiturnya.'
   },
   {
     question: 'Siapa pemilik hak cipta dari gambar yang dihasilkan?',

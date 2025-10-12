@@ -10,7 +10,7 @@ const EMOJIS: Record<ProductCategory, string> = {
 
 const DESCRIPTIONS: Record<ProductCategory, string> = {
     'food_beverage': 'Buat produk Anda melayang dengan efek asap, percikan, dan bahan-bahan segar yang menggugah selera.',
-    'fashion_lifestyle': 'Tempatkan produk Anda pada model profesional dalam berbagai setelan gaya hidup, dari studio hingga jalanan kota.',
+    'fashion_lifestyle': 'Tempatkan produk Anda pada model profesional dalam berbagai setelan gaya hidup di kota.',
     'automotive': 'Ubah mobil Anda dengan modifikasi widebody, gaya balap, atau tampilkan dalam adegan sinematik yang dinamis.',
 };
 
