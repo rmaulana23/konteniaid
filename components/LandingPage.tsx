@@ -192,7 +192,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                 Satu Harga untuk Akses Semua Kategori
             </h2>
             <p className="max-w-xl mx-auto text-gray-600 mb-12">
-                Investasi sekali untuk mendapatkan semua fitur, tanpa biaya bulanan (50x/Hari)
+                Investasi sekali untuk mendapatkan semua fitur, tanpa biaya bulanan
             </p>
             <div className="flex items-center justify-center">
                 {/* All Access Card */}
@@ -208,7 +208,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                                 Rp 90rb
                             </p>
                         </div>
-                        <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 50 orang pertama</p>
+                        <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 100 orang pertama</p>
                         <ul className="space-y-3 text-left text-gray-600 max-w-xs mx-auto">
                              <li className="flex items-center gap-3"><CheckIcon /><span>Akses <strong>Semua</strong> Kategori & Gaya</span></li>
                             <li className="flex items-center gap-3"><CheckIcon /><span>Fitur Modifikasi Lanjutan</span></li>
