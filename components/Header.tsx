@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
                 className="hidden sm:flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
                 aria-label="Buka halaman FAQ"
               >
-                <b>FAQ</b>
+                FAQ
               </button>
 
               {/* Mobile Menu Button */}

@@ -91,7 +91,7 @@ const sliderData = [
   },
   {
     id: 'fashion',
-    label: 'Fashion',
+    label: 'Fashion ',
     beforeImage: 'https://imgur.com/wZdhOGV.jpg',
     afterImage: 'https://imgur.com/NvysNas.jpg',
   },
@@ -178,7 +178,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
             </div>
             <div className="bg-white p-8 rounded-lg border border-gray-200 flex flex-col items-center text-center shadow-sm">
               <span className="text-4xl">🚘</span>
-              <h3 className="text-xl font-bold mt-6 mb-2">Otomotif</h3>
+              <h3 className="text-xl font-bold mt-6 mb-2">Otomotif & Modif</h3>
               <p className="text-gray-600">
                 Ubah mobil Anda dengan modifikasi widebody, gaya balap, atau tampilkan dalam adegan sinematik yang dinamis.
               </p>

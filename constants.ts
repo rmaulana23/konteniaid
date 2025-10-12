@@ -3,7 +3,7 @@ import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModifica
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
   { value: 'fashion_lifestyle', label: 'Fashion & Lifestyle' },
-  { value: 'automotive', label: 'Otomotif' },
+  { value: 'automotive', label: 'Otomotif & Modif' },
 ];
 
 export const VEHICLE_TYPE_OPTIONS: SelectOption<VehicleType>[] = [
