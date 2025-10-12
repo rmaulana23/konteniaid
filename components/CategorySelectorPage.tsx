@@ -20,7 +20,7 @@ interface CategorySelectorPageProps {
 
 const CategorySelectorPage: React.FC<CategorySelectorPageProps> = ({ onSelectCategory }) => {
     return (
-        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full flex flex-col items-center justify-center">
+        <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl w-full flex flex-col items-center justify-center">
             <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 text-center">Pilih Kategori Produk Anda</h1>
             <p className="text-gray-600 mb-12 text-center max-w-2xl">Pilih kategori yang paling sesuai dengan produk Anda untuk mendapatkan hasil AI yang paling optimal.</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">

@@ -80,6 +80,7 @@ const App: React.FC = () => {
   const [wideBody, setWideBody] = useState<'yes' | 'no'>('no');
   const [rims, setRims] = useState<'yes' | 'no'>('no');
   const [hood, setHood] = useState<'yes' | 'no'>('no');
+  const [allBumper, setAllBumper] = useState<'yes' | 'no'>('no');
   const [livery, setLivery] = useState<LiveryStyle>('none');
   const [stickerFile, setStickerFile] = useState<File | null>(null);
   const [stickerPreview, setStickerPreview] = useState<string | null>(null);
@@ -140,6 +141,7 @@ const App: React.FC = () => {
     setWideBody('no');
     setRims('no');
     setHood('no');
+    setAllBumper('no');
     setLivery('none');
     setStickerFile(null);
     setStickerPreview(null);
@@ -252,6 +254,7 @@ const App: React.FC = () => {
         wideBody,
         rims,
         hood,
+        allBumper,
         livery,
         stickerFile
       );
@@ -321,7 +324,7 @@ const App: React.FC = () => {
     const categoryInfo = PRODUCT_CATEGORIES.find(c => c.value === selectedCategory);
 
     return (
-      <div className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
+      <div className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl w-full">
         <button
           onClick={() => {
             resetGeneratorState();
@@ -354,6 +357,7 @@ const App: React.FC = () => {
                 {vehicleType === 'mobil' && automotiveModification === 'custom' && (
                     <div className="space-y-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                         <h4 className="font-semibold text-gray-800 -mb-2">Detail Modifikasi Custom:</h4>
+                        <OptionSelector title="All Bumper" options={YES_NO_OPTIONS} selectedValue={allBumper} onValueChange={(v) => setAllBumper(v as 'yes' | 'no')} />
                         <OptionSelector title="Spoiler" options={YES_NO_OPTIONS} selectedValue={spoiler} onValueChange={(v) => setSpoiler(v as 'yes' | 'no')} />
                         <OptionSelector title="Wide Body" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v as 'yes' | 'no')} />
                         <OptionSelector title="Rims/Velg" options={YES_NO_OPTIONS} selectedValue={rims} onValueChange={(v) => setRims(v as 'yes' | 'no')} />

@@ -54,9 +54,12 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onUpgradeClick
 
   return (
     <>
-      <div className="mx-4 sm:mx-0">
-        <header className="max-w-7xl mt-4 mx-auto py-4 px-4 sm:px-6 lg:px-8 rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
-          <div className="flex flex-col sm:flex-row items-center justify-between">
+      {/* Wrapper div provides space from the viewport edges, making the header "float" within the page. */}
+      <div className="w-full px-4 pt-4 sm:px-6 lg:px-8">
+        {/* The header is full-width within the padded parent, with rounded corners and shadow for a floating effect. */}
+        <header className="w-full rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
+          {/* This inner div constrains the content to a max-width and centers it. */}
+          <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between">
             <button
               onClick={onGoHome}
               disabled={isTrialOver}

@@ -47,6 +47,7 @@ const getPrompt = (
     wideBody?: 'yes' | 'no',
     rims?: 'yes' | 'no',
     hood?: 'yes' | 'no',
+    allBumper?: 'yes' | 'no',
     livery?: LiveryStyle,
     hasSticker?: boolean
 ): string => {
@@ -135,6 +136,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                         break;
                     case 'custom':
                         const customMods: string[] = [];
+                        if (allBumper === 'yes') customMods.push('completely replace the original front and rear bumpers and side skirts with a new, aggressive custom design. The new parts must look drastically different from the stock version');
                         if (spoiler === 'yes') customMods.push('a custom rear spoiler (choose a style that fits the car, e.g., ducktail, wing, or lip spoiler)');
                         if (wideBody === 'yes') customMods.push('a custom widebody kit with flared wheel arches');
                         if (rims === 'yes') customMods.push('large, high-end custom aftermarket wheels/rims');
@@ -247,7 +249,7 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
 Do not change the product itself, but place it in a new, hyper-realistic scene.
 IMPORTANT: If the uploaded product is in packaging (e.g., a snack bag, box, or bottle), creatively open the packaging to reveal the contents. Some of the product can be shown spilling out or arranged artfully around the open package to make it look delicious and appealing.
 Make the product levitate elegantly in the center.
-Surround the levitating product with its key ingredients or related elements, also floating dynamically.
+Surround the levitating product with its key ingredients or related elements, juga floating dynamically.
 ${dynamicEffects}
 The scene style is: ${styleDetails}
 ${colorTonePrompt}
@@ -281,6 +283,7 @@ export const generateAdPhotos = async (
   wideBody?: 'yes' | 'no',
   rims?: 'yes' | 'no',
   hood?: 'yes' | 'no',
+  allBumper?: 'yes' | 'no',
   livery?: LiveryStyle,
   stickerFile?: File | null
 ): Promise<string[]> => {
@@ -291,7 +294,7 @@ export const generateAdPhotos = async (
     const textPrompt = getPrompt(
         category, adStyle, modelGender, automotiveModification, carColor, 
         vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
-        wideBody, rims, hood, livery, !!stickerFile
+        wideBody, rims, hood, allBumper, livery, !!stickerFile
     );
 
     const imagePart = await fileToGenerativePart(imageFile);

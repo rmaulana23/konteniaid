@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
     return (
         <>
             <footer className="w-full pt-8 pb-6 px-4 sm:px-6 lg:px-8 border-t border-gray-200 bg-white">
-                <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between max-w-7xl text-sm text-gray-500">
+                <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between max-w-6xl text-sm text-gray-500">
                     <p>&copy; 2025 Kontenia. All rights reserved.</p>
                     <div className="flex items-center gap-4 mt-2 sm:mt-0">
                         <button 

@@ -138,7 +138,7 @@ const Dashboard: React.FC = () => {
   }
 
   return (
-    <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
+    <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8 max-w-6xl w-full">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
         <p className="text-gray-600 mt-1">Kelola pengguna dan pantau aktivitas aplikasi.</p>
