@@ -222,7 +222,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                             onClick={onGetAccess}
                             className="mt-8 w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300"
                         >
-                            Dapatkan Akses Full
+                            Dapatkan Akses Penuh
                         </button>
                     </div>
                 </div>

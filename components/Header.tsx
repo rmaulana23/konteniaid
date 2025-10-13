@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
                   onClick={onGetAccess}
                   className="hidden sm:block bg-white text-brand-secondary font-bold py-2 px-5 rounded-lg text-sm transition-all duration-300 transform hover:scale-105 shadow"
                 >
-                  Dapatkan Akses Full
+                  Dapatkan Akses Penuh
                 </button>
               )}
 
@@ -79,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
                                   onClick={() => { onGetAccess(); setIsMobileMenuOpen(false); }}
                                   className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-all duration-300"
                               >
-                                  Dapatkan Akses Full
+                                  Dapatkan Akses Penuh
                               </button>
                           </div>
                       )}
