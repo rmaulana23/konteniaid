@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
 import { supabase } from '../services/supabase';
+import { Session, User } from '@supabase/supabase-js';
 
 export interface Profile {
   id: string;
@@ -10,90 +10,82 @@ export interface Profile {
   is_admin: boolean;
   generation_count: number;
   generation_limit: number;
+  updated_at?: string | null;
+  // FIX: Added last_reset_at to the Profile interface to resolve the type error in components/Dashboard.tsx.
   last_reset_at?: string | null;
 }
 
-interface ProfileContextType {
+interface AuthContextType {
+  session: Session | null;
   profile: Profile | null;
-  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>;
   loading: boolean;
 }
 
-const ProfileContext = createContext<ProfileContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const ProfileProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user, isLoaded } = useUser();
+  const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getOrCreateProfile = async () => {
-      if (!user) {
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
+    const fetchSessionAndProfile = async () => {
       setLoading(true);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      setSession(session);
 
-      try {
-        const { data: existingProfile, error: fetchError } = await supabase
+      if (session?.user) {
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('id', session.user.id)
           .single();
-
-        if (existingProfile) {
-          setProfile(existingProfile as Profile);
-        } else if (fetchError && fetchError.code === 'PGRST116') { // PGRST116: row not found
-          const { data: newProfile, error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: user.id,
-              email: user.primaryEmailAddress?.emailAddress,
-              full_name: user.fullName,
-            })
-            .select()
-            .single();
-
-          if (insertError) {
-            console.error("Error creating profile:", insertError);
-            setProfile(null);
-          } else {
-            setProfile(newProfile as Profile);
-          }
-        } else if (fetchError) {
-          console.error("Error fetching profile:", fetchError);
-          setProfile(null);
+        
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+        } else {
+          setProfile(profileData);
         }
-      } catch (error) {
-        console.error("An unexpected error occurred while fetching or creating profile:", error);
-        setProfile(null);
-      } finally {
-        setLoading(false);
       }
+      setLoading(false);
     };
 
-    if (isLoaded) {
-      getOrCreateProfile();
-    }
-  }, [user, isLoaded]);
+    fetchSessionAndProfile();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (session?.user) {
+         const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setProfile(profileData || null);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const value = {
+    session,
     profile,
-    setProfile,
     loading,
   };
 
   return (
-    <ProfileContext.Provider value={value}>
+    <AuthContext.Provider value={value}>
       {children}
-    </ProfileContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
 export const useProfile = () => {
-  const context = useContext(ProfileContext);
+  const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useProfile must be used within a ProfileProvider');
   }
