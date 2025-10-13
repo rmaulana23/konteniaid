@@ -114,7 +114,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
             onClick={onSuccessfulPayment}
             className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
         >
-            
+            <WhatsAppIcon />
             Kirim Bukti via WhatsApp
         </a>
       </div>

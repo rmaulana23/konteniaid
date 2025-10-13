@@ -9,14 +9,11 @@ import ImageGrid from './components/ImageGrid';
 import Spinner from './components/Spinner';
 import PaymentModal from './components/PaymentModal';
 import AccessCodeModal from './components/AccessCodeModal';
-import Dashboard from './components/Dashboard';
 import FAQPage from './components/FAQPage';
 import NotificationToast from './components/NotificationToast'; // Import the new toast component
 import TermsModal from './components/TermsModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 
-import { useUser } from '@clerk/clerk-react';
-import { useProfile, type Profile } from './contexts/AuthContext';
 import { supabase } from './services/supabase';
 import { generateAdPhotos } from './services/geminiService';
 
@@ -47,7 +44,7 @@ import {
   LIVERY_STYLE_OPTIONS,
 } from './constants';
 
-type Page = 'landing' | 'category' | 'generator' | 'dashboard' | 'faq';
+type Page = 'landing' | 'category' | 'generator' | 'faq';
 
 const GUEST_GENERATION_LIMIT = 3;
 
@@ -70,9 +67,6 @@ const getSimpleDeviceId = async (): Promise<string> => {
 
 
 const App: React.FC = () => {
-  const { user } = useUser();
-  const { profile, setProfile } = useProfile();
-
   // App State
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -113,7 +107,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (page === 'generator') {
       const hasSeenToast = localStorage.getItem('hasSeenTrialNotification');
-      const isGuestUser = !hasValidAccessCode; // Simple check if user is a guest (doesn't have a valid code)
+      const isGuestUser = !hasValidAccessCode;
 
       if (!hasSeenToast && isGuestUser) {
         setShowTrialToast(true);
@@ -164,12 +158,9 @@ const App: React.FC = () => {
 
 
   const isTrialOver = useMemo(() => {
-    if (hasValidAccessCode) return false; // User has a valid code, trial is never over for them.
-    if (user && profile) {
-      return !profile.is_paid && profile.generation_count >= profile.generation_limit;
-    }
+    if (hasValidAccessCode) return false;
     return guestGenerationCount >= GUEST_GENERATION_LIMIT;
-  }, [profile, user, guestGenerationCount, hasValidAccessCode]);
+  }, [guestGenerationCount, hasValidAccessCode]);
 
   
   const resetGeneratorState = () => {
@@ -345,15 +336,9 @@ const App: React.FC = () => {
         customModelFile
       );
       setGeneratedImages(images);
-
-      if (user && profile) {
-        const { data, error: updateError } = await supabase.rpc('increment_generation_count', { user_id: user.id });
-        if (updateError) throw updateError;
-        if(data) { // Ensure data is not null before setting
-          setProfile(data as Profile);
-        }
-      } else if (!user) {
-        // Only increment for guest users
+      
+      // If user doesn't have a valid access code, they are a guest.
+      if (!hasValidAccessCode) {
         setGuestGenerationCount(prev => prev + 1);
       }
 
@@ -372,8 +357,6 @@ const App: React.FC = () => {
         return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} />;
       case 'category':
         return <CategorySelectorPage onSelectCategory={handleSelectCategory} />;
-      case 'dashboard':
-        return <Dashboard />;
       case 'faq':
         return <FAQPage />;
       case 'generator':
@@ -570,12 +553,12 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-brand-background">
       <Header 
         onGoHome={handleGoHome} 
-        onGoDashboard={() => setPage('dashboard')}
         onGoToFAQ={handleGoToFAQ}
         onOpenTerms={() => setIsTermsModalOpen(true)}
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
-        onUpgradeClick={() => setIsPaymentModalOpen(true)}
+        onGetAccess={() => setIsPaymentModalOpen(true)}
         isTrialOver={isTrialOver}
+        hasAccessCode={hasValidAccessCode}
       />
       <main className="flex-grow">
         {renderPage()}
@@ -586,14 +569,13 @@ const App: React.FC = () => {
       />
       <NotificationToast
         isVisible={showTrialToast}
-        message="Anda memiliki 3x kesempatan untuk mencoba generate foto secara gratis."
+        message={`Anda memiliki ${GUEST_GENERATION_LIMIT}x kesempatan untuk mencoba generate foto secara gratis.`}
         onClose={() => setShowTrialToast(false)}
       />
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)} 
         onSuccessfulPayment={() => {
-            // This now just closes the modal, user will be prompted for code later
             setIsPaymentModalOpen(false);
         }}
       />

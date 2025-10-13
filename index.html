@@ -2,39 +2,52 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="https://raw.githubusercontent.com/rmaulana23/konteniaid/main/favicon.ico" />
+    <link
+      rel="icon"
+      href="https://raw.githubusercontent.com/rmaulana23/konteniaid/main/favicon.ico"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kontenia | AI Image Generator</title>
+
+    
+    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              'brand-primary': '#2643c7', // Custom Blue
-              'brand-secondary': '#1c3191', // Darker blue for hover
+              'brand-primary': '#2643c7',
+              'brand-secondary': '#1c3191',
               'brand-light': '#93c5fd',
-              'brand-background': '#f7f8fa', // Off-white/Silver background
+              'brand-background': '#f7f8fa',
             },
           },
         },
-      }
+      };
     </script>
-  <script type="importmap">
+
+    <!-- ✅ Importmap yang sudah diperbaiki dan stabil -->
+    <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.23.0",
+    "react": "https://esm.sh/react@18.3.1?dev",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?dev",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime?dev",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.24.0",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.75.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@supabase/supabase-js": "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm",
-    "@clerk/clerk-react": "https://cdn.jsdelivr.net/npm/@clerk/clerk-react@5/+esm"
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@clerk/clerk-react": "https://aistudiocdn.com/@clerk/clerk-react@^5.51.0"
   }
 }
 </script>
-</head>
+
+  </head>
   <body class="bg-brand-background text-gray-900">
     <div id="root"></div>
+
+    <!-- ✅ Script React entry point -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
