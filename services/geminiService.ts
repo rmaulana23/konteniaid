@@ -52,7 +52,8 @@ const getPrompt = (
     hasSticker?: boolean,
     hasPerson?: boolean,
     personMode?: 'full_body' | 'face_only',
-    hasCustomModel?: boolean
+    hasCustomModel?: boolean,
+    kidsAgeRange?: string
 ): string => {
     let basePrompt = '';
 
@@ -89,7 +90,10 @@ const getPrompt = (
                     genderText = 'female model';
                     break;
                 case 'kids':
-                    genderText = 'child model (boy or girl, age around 6-10 years old, looking happy and natural)';
+                    const ageText = kidsAgeRange && kidsAgeRange.trim() !== '' 
+                        ? `age around ${kidsAgeRange.trim()}` 
+                        : 'age around 6-10 years old';
+                    genderText = `child model (boy or girl, ${ageText}, looking happy and natural)`;
                     break;
                 default:
                     genderText = 'female model'; // Fallback
@@ -323,7 +327,8 @@ export const generateAdPhotos = async (
   stickerFile?: File | null,
   personImageFile?: File | null,
   personMode?: 'full_body' | 'face_only',
-  customModelFile?: File | null
+  customModelFile?: File | null,
+  kidsAgeRange?: string
 ): Promise<string[]> => {
   try {
     const genAI = initAi();
@@ -333,7 +338,7 @@ export const generateAdPhotos = async (
         category, adStyle, modelGender, automotiveModification, carColor, 
         vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
         wideBody, rims, hood, allBumper, livery, !!stickerFile,
-        !!personImageFile, personMode, !!customModelFile
+        !!personImageFile, personMode, !!customModelFile, kidsAgeRange
     );
 
     const imagePart = await fileToGenerativePart(imageFile);

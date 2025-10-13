@@ -124,6 +124,7 @@ const App: React.FC = () => {
   const [adStyle, setAdStyle] = useState<AdStyle>('indoor_studio');
   const [variations, setVariations] = useState<number>(1);
   const [modelGender, setModelGender] = useState<ModelGender>('woman');
+  const [kidsAgeRange, setKidsAgeRange] = useState(''); // New state for kids age range
   const [automotiveModification, setAutomotiveModification] = useState<AutomotiveModification>('none');
   const [carColor, setCarColor] = useState<CarColor>('original');
   const [vehicleType, setVehicleType] = useState<VehicleType>('mobil');
@@ -173,6 +174,7 @@ const App: React.FC = () => {
     setError(null);
     // Reset category-specific states
     setModelGender('woman');
+    setKidsAgeRange('');
     setAutomotiveModification('none');
     setCarColor('original');
     setVehicleType('mobil');
@@ -333,7 +335,8 @@ const App: React.FC = () => {
         stickerFile,
         personImageFile,
         personImageFile ? personMode : undefined,
-        customModelFile
+        customModelFile,
+        kidsAgeRange
       );
       setGeneratedImages(images);
       
@@ -399,6 +402,21 @@ const App: React.FC = () => {
                   <>
                     <OptionSelector title="2. Pilih Gaya Foto" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
                     <OptionSelector title="3. Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                    
+                    {modelGender === 'kids' && (
+                      <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                          <label htmlFor="kids-age-range" className="block text-sm font-semibold text-gray-700">Tentukan Rentang Umur (Opsional)</label>
+                          <input 
+                              id="kids-age-range"
+                              type="text" 
+                              value={kidsAgeRange}
+                              onChange={(e) => setKidsAgeRange(e.target.value)}
+                              placeholder="Contoh: 3-5 tahun"
+                              className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
+                          />
+                      </div>
+                    )}
+
                     {modelGender === 'custom' && (
                         <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
                             <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
