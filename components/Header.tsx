@@ -53,6 +53,15 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
                 FAQ
               </button>
               
+              {!hasAccessCode && (
+                <button
+                  onClick={onGetAccess}
+                  className="hidden sm:block bg-white text-brand-secondary font-bold py-2 px-5 rounded-lg text-sm transition-all duration-300 transform hover:scale-105 shadow"
+                >
+                  Dapatkan Akses Full
+                </button>
+              )}
+
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="sm:hidden text-white p-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
@@ -64,6 +73,16 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
 
               {isMobileMenuOpen && (
                   <div className="sm:hidden absolute top-full right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-30 ring-1 ring-black ring-opacity-5">
+                      {!hasAccessCode && (
+                          <div className="p-2 border-b border-gray-100">
+                              <button
+                                  onClick={() => { onGetAccess(); setIsMobileMenuOpen(false); }}
+                                  className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-2 px-4 rounded-md text-sm transition-all duration-300"
+                              >
+                                  Dapatkan Akses Full
+                              </button>
+                          </div>
+                      )}
                       <a
                           onClick={() => { onGoToFAQ(); setIsMobileMenuOpen(false); }}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
