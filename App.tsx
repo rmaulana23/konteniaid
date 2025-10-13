@@ -15,8 +15,8 @@ import NotificationToast from './components/NotificationToast'; // Import the ne
 import TermsModal from './components/TermsModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 
-
-import { useAuth, type Profile } from './contexts/AuthContext';
+import { useUser } from '@clerk/clerk-react';
+import { useProfile, type Profile } from './contexts/AuthContext';
 import { supabase } from './services/supabase';
 import { generateAdPhotos } from './services/geminiService';
 
@@ -70,7 +70,8 @@ const getSimpleDeviceId = async (): Promise<string> => {
 
 
 const App: React.FC = () => {
-  const { user, profile, setProfile, loading } = useAuth();
+  const { user } = useUser();
+  const { profile, setProfile } = useProfile();
 
   // App State
   const [page, setPage] = useState<Page>('landing');

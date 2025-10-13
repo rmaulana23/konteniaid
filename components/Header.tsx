@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../contexts/AuthContext';
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/clerk-react";
 import ProgressBar from './ProgressBar';
 
 interface HeaderProps {
@@ -60,21 +61,13 @@ const CloseIcon = () => (
 
 
 const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onOpenTerms, onOpenPrivacy, onUpgradeClick, isTrialOver }) => {
-  const { user, profile, login, logout } = useAuth();
+  const { profile } = useProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    onGoHome();
-  };
 
   return (
     <>
-      {/* Wrapper div provides space from the viewport edges, making the header "float" within the page. */}
       <div className="w-full px-4 pt-4 sm:px-6 lg:px-8">
-        {/* The header is full-width within the padded parent, with rounded corners and shadow for a floating effect. */}
         <header className="w-full rounded-xl shadow-lg bg-gradient-to-r from-brand-primary to-teal-500">
-          {/* This inner div constrains the content to a max-width and centers it. */}
           <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-row items-center justify-between">
             <button
               onClick={onGoHome}
@@ -86,7 +79,6 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
               <h1 className="text-3xl font-bold text-white group-hover:text-blue-100 transition-colors">Kontenia</h1>
             </button>
             <div className="relative flex items-center gap-4">
-              {/* Desktop Menu */}
               <button
                 onClick={onGoToFAQ}
                 className="hidden sm:flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
@@ -95,7 +87,6 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
                 FAQ
               </button>
 
-              {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="sm:hidden text-white p-2 rounded-md hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white"
@@ -105,7 +96,6 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
                 {isMobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
 
-              {/* Mobile Menu Dropdown */}
               {isMobileMenuOpen && (
                   <div className="sm:hidden absolute top-full right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-30 ring-1 ring-black ring-opacity-5">
                       <a
@@ -123,12 +113,23 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
                   </div>
               )}
 
-              {/* --- START: Temporarily hidden login/user section --- */}
-              {/*
-              {user ? (
-                <>
-                  <div className="hidden sm:flex items-center gap-4">
-                      {profile && !profile.is_admin && !profile.is_paid && (
+              <SignedOut>
+                <div className="hidden sm:block">
+                    <SignInButton mode="modal">
+                        <button
+                            className="flex items-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-2 px-4 rounded-lg transition-colors shadow-md"
+                            aria-label="Login with Google"
+                        >
+                            <GoogleIcon />
+                            Login
+                        </button>
+                    </SignInButton>
+                </div>
+              </SignedOut>
+
+              <SignedIn>
+                <div className="hidden sm:flex items-center gap-4">
+                    {profile && !profile.is_admin && !profile.is_paid && (
                         <button
                             onClick={onUpgradeClick}
                             className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-1 px-3 rounded-full text-xs transition-colors flex items-center gap-1 shadow-sm transform hover:scale-105"
@@ -137,73 +138,48 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoDashboard, onGoToFAQ, onO
                             <UpgradeIcon />
                             Upgrade
                         </button>
-                      )}
-                      {profile && !profile.is_admin && (
+                    )}
+                    {profile && !profile.is_admin && (
                         <div className="w-40">
-                          <ProgressBar
-                            value={profile.generation_count}
-                            limit={profile.generation_limit}
-                            theme="dark"
-                          />
+                            <ProgressBar
+                                value={profile.generation_count}
+                                limit={profile.generation_limit}
+                                theme="dark"
+                            />
                         </div>
-                      )}
-                      <span className="text-white text-sm whitespace-nowrap" aria-label="User welcome">
-                        Halo, {profile?.full_name || user.email}
-                      </span>
-                  </div>
+                    )}
+                    {profile?.is_admin && (
+                        <button
+                            onClick={onGoDashboard}
+                            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                            aria-label="Buka Dashboard Admin"
+                        >
+                            <DashboardIcon />
+                            Dashboard
+                        </button>
+                    )}
+                </div>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
 
-                  {profile?.is_admin && (
-                    <button
-                      onClick={onGoDashboard}
-                      className="flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                      aria-label="Buka Dashboard Admin"
-                    >
-                      <DashboardIcon />
-                      Dashboard
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 bg-red-500/80 hover:bg-red-500/100 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-                    aria-label="Logout"
-                  >
-                    <LogoutIcon />
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={login}
-                  className="hidden sm:flex items-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-2 px-4 rounded-lg transition-colors shadow-md"
-                  aria-label="Login with Google"
-                >
-                  <GoogleIcon />
-                  Login dengan Google
-                </button>
-              )}
-              */}
-              {/* --- END: Temporarily hidden login/user section --- */}
             </div>
           </div>
         </header>
       </div>
 
-      {/* --- START: Temporarily hidden mobile login button --- */}
-      {/*
-      {!user && (
-        <div className="sm:hidden mx-4 mt-4">
-            <button
-              onClick={login}
-              className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-3 px-4 rounded-lg transition-colors shadow-md"
-              aria-label="Login with Google"
-            >
-              <GoogleIcon />
-              Login dengan Google
-            </button>
-        </div>
-      )}
-      */}
-      {/* --- END: Temporarily hidden mobile login button --- */}
+       <div className="sm:hidden mx-4 mt-4">
+            <SignedOut>
+                <SignInButton mode="modal">
+                    <button
+                        className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-brand-secondary font-semibold py-3 px-4 rounded-lg transition-colors shadow-md"
+                        aria-label="Login with Google"
+                    >
+                    <GoogleIcon />
+                    Login dengan Google
+                    </button>
+                </SignInButton>
+            </SignedOut>
+       </div>
     </>
   );
 };
