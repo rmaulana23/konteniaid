@@ -117,11 +117,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                 {/* Left Column: CTA */}
                 <div className="text-center lg:text-left">
                     <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight text-gray-900">
-                        Ubah Foto Biasa
-                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mt-2">Jadi Luar Biasa</span>
+                        Bikin Foto Produkmu
+                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mt-2">
+                        Jadi Kelas Iklan Profesional
+                        </span>
                     </h1>
                     <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-gray-600">
-                        Manfaatkan kekuatan AI untuk membuat foto biasa jadi foto iklan yang Profesional.
+                        Gunakan kecerdasan AI untuk mengubah fotomu menjadi visual iklan yang memukau.
                     </p>
                     <button
                         onClick={onStart}
