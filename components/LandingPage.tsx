@@ -207,7 +207,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                                 Rp 149rb
                             </p>
                             <p className="text-5xl font-extrabold text-gray-900">
-                                Rp 90rb
+                                Rp 79rb
                             </p>
                         </div>
                         <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 100 orang pertama</p>

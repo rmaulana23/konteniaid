@@ -100,7 +100,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
 
         <div className="my-4">
             <p className="text-sm text-gray-500">Total Pembayaran</p>
-            <p className="text-3xl font-extrabold text-gray-900">Rp 90.000</p>
+            <p className="text-3xl font-extrabold text-gray-900">Rp 79.000</p>
         </div>
         
         <p className="text-xs text-gray-500 mb-6">
