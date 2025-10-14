@@ -366,7 +366,7 @@ const App: React.FC = () => {
   const renderPage = () => {
     switch (page) {
       case 'landing':
-        return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} />;
+        return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} hasValidAccessCode={hasValidAccessCode} />;
       case 'category':
         return <CategorySelectorPage onSelectCategory={handleSelectCategory} />;
       case 'faq':

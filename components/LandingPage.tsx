@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 interface LandingPageProps {
   onStart: () => void;
   onGetAccess: () => void;
+  hasValidAccessCode?: boolean;
 }
 
 const CheckIcon = () => (
@@ -103,7 +104,7 @@ const sliderData = [
   },
 ];
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess, hasValidAccessCode }) => {
   const [activeSlider, setActiveSlider] = useState('automotive');
   const currentSlider = sliderData.find(s => s.id === activeSlider) || sliderData[0];
 
@@ -127,9 +128,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                     </p>
                     <button
                         onClick={onStart}
-                        className="mt-8 bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-blue-500/20"
+                        className={`mt-8 font-bold py-3 px-8 rounded-lg text-lg transition-all duration-300 transform hover:scale-105 shadow-lg ${
+                            hasValidAccessCode
+                            ? 'bg-gradient-to-r from-green-500 to-teal-600 text-white shadow-green-500/20'
+                            : 'bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white shadow-blue-500/20'
+                        }`}
                     >
-                        Coba GRATIS Sekarang
+                        {hasValidAccessCode ? 'Lanjutkan ke Generator' : 'Coba GRATIS Sekarang'}
                     </button>
                     
                 </div>
@@ -198,7 +203,14 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
             </p>
             <div className="flex items-center justify-center">
                 {/* All Access Card */}
-                <div className="w-full max-w-md rounded-xl p-1 bg-gradient-to-r from-brand-primary to-teal-500 shadow-2xl shadow-blue-500/20 transform hover:-translate-y-2 transition-transform duration-300">
+                <div className={`relative w-full max-w-md rounded-xl p-1 bg-gradient-to-r from-brand-primary to-teal-500 shadow-2xl shadow-blue-500/20 ${hasValidAccessCode ? '' : 'transform hover:-translate-y-2 transition-transform duration-300'}`}>
+                    {hasValidAccessCode && (
+                        <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-xl z-10 flex flex-col items-center justify-center p-4 text-center">
+                             <span className="text-4xl mb-2">✅</span>
+                             <h4 className="text-xl font-bold text-gray-900">Akses Penuh Sudah Aktif</h4>
+                             <p className="text-gray-600 text-sm mt-1">Anda dapat langsung memulai membuat gambar.</p>
+                        </div>
+                    )}
                     <div className="bg-white rounded-lg p-8 h-full relative">
                         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-brand-primary to-teal-500 text-white text-xs font-bold px-4 py-1 rounded-full uppercase">Early Access</div>
                         <h3 className="text-2xl font-semibold text-gray-900">Akses Uji Coba</h3>
