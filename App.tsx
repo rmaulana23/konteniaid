@@ -303,10 +303,19 @@ const App: React.FC = () => {
       setError('Silakan upload foto produk dan pilih kategori terlebih dahulu.');
       return;
     }
-    
+
     if (isTrialOver) {
       setIsAccessCodeModalOpen(true);
       return;
+    }
+
+    // New: Check if guest has enough credits for the requested variations
+    if (!hasValidAccessCode) {
+      const remainingCredits = GUEST_GENERATION_LIMIT - guestGenerationCount;
+      if (variations > remainingCredits) {
+        setError(`Anda meminta ${variations} variasi, tetapi hanya memiliki sisa ${remainingCredits} kredit gratis. Silakan kurangi jumlah variasi atau upgrade.`);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -342,7 +351,7 @@ const App: React.FC = () => {
       
       // If user doesn't have a valid access code, they are a guest.
       if (!hasValidAccessCode) {
-        setGuestGenerationCount(prev => prev + 1);
+        setGuestGenerationCount(prev => prev + variations); // Deduct based on variations
       }
 
     } catch (err: any) {
@@ -587,7 +596,7 @@ const App: React.FC = () => {
       />
       <NotificationToast
         isVisible={showTrialToast}
-        message={`Anda memiliki ${GUEST_GENERATION_LIMIT}x kesempatan untuk mencoba generate foto secara gratis.`}
+        message={`Anda memiliki ${GUEST_GENERATION_LIMIT} kredit percobaan gratis. Setiap variasi yang Anda hasilkan akan menggunakan 1 kredit.`}
         onClose={() => setShowTrialToast(false)}
       />
       <PaymentModal 
