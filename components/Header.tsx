@@ -37,8 +37,7 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
           <div className="max-w-6xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex flex-row items-center justify-between">
             <button
               onClick={onGoHome}
-              disabled={isTrialOver}
-              className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-secondary focus:ring-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-4 group focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-secondary focus:ring-white rounded-lg"
               aria-label="Kembali ke halaman utama"
             >
               <LogoIcon />
