@@ -5,6 +5,7 @@ interface AccessCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   onVerify: (code: string) => Promise<boolean>;
+  onUpgradeClick: () => void;
 }
 
 const KeyIcon = () => (
@@ -12,7 +13,7 @@ const KeyIcon = () => (
 );
 
 
-const AccessCodeModal: React.FC<AccessCodeModalProps> = ({ isOpen, onClose, onVerify }) => {
+const AccessCodeModal: React.FC<AccessCodeModalProps> = ({ isOpen, onClose, onVerify, onUpgradeClick }) => {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +93,7 @@ const AccessCodeModal: React.FC<AccessCodeModalProps> = ({ isOpen, onClose, onVe
         
         <p className="text-xs text-gray-500 mt-6">
             Belum punya kode?{' '}
-            <button onClick={onClose} className="font-semibold text-brand-secondary hover:underline">
+            <button onClick={onUpgradeClick} className="font-semibold text-brand-secondary hover:underline">
                 Lihat cara upgrade
             </button>
         </p>

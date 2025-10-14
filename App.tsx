@@ -601,6 +601,10 @@ const App: React.FC = () => {
         isOpen={isAccessCodeModalOpen}
         onClose={() => setIsAccessCodeModalOpen(false)}
         onVerify={handleVerifyAccessCode}
+        onUpgradeClick={() => {
+          setIsAccessCodeModalOpen(false);
+          setIsPaymentModalOpen(true);
+        }}
       />
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
       <PrivacyPolicyModal isOpen={isPrivacyPolicyModalOpen} onClose={() => setIsPrivacyPolicyModalOpen(false)} />
