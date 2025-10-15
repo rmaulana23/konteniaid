@@ -81,27 +81,50 @@ const App: React.FC = () => {
   const [hasValidAccessCode, setHasValidAccessCode] = useState<boolean>(false);
   const [pendingCategory, setPendingCategory] = useState<ProductCategory | null>(null);
 
-  // Initialize Device ID and load guest data from localStorage
+  // Initialize Device ID and load guest data from Supabase for persistence
   useEffect(() => {
     const initDevice = async () => {
         const id = await getSimpleDeviceId();
         setDeviceId(id);
-        
-        const savedCount = localStorage.getItem(`guestGenerationCount_${id}`);
-        setGuestGenerationCount(savedCount ? parseInt(savedCount, 10) : 0);
 
-        const validCode = localStorage.getItem(`hasValidAccessCode_${id}`) === 'true';
-        setHasValidAccessCode(validCode);
+        if (id) {
+            try {
+                // Check if device already exists in Supabase
+                const { data, error } = await supabase
+                    .from('guest_devices')
+                    .select('generation_count, has_access_code')
+                    .eq('device_id', id)
+                    .single();
+
+                if (data) {
+                    // Device exists, use its data
+                    setGuestGenerationCount(data.generation_count);
+                    setHasValidAccessCode(data.has_access_code);
+                } else if (error && error.code === 'PGRST116') { // row not found
+                    // New device, insert it with default values
+                    const { error: insertError } = await supabase
+                        .from('guest_devices')
+                        .insert({ device_id: id, generation_count: 0, has_access_code: false });
+                    
+                    if (insertError) {
+                        console.error("Error creating guest device record:", insertError);
+                    }
+                    setGuestGenerationCount(0);
+                    setHasValidAccessCode(false);
+                } else if (error) {
+                    console.error("Error fetching guest device data:", error);
+                    setGuestGenerationCount(0); // Fallback on error
+                    setHasValidAccessCode(false);
+                }
+            } catch (e) {
+                console.error("An exception occurred during device initialization:", e);
+                setGuestGenerationCount(0); // Fallback on exception
+                setHasValidAccessCode(false);
+            }
+        }
     };
     initDevice();
   }, []);
-
-  // Sync guest generation count with localStorage using deviceId
-  useEffect(() => {
-    if (deviceId) {
-      localStorage.setItem(`guestGenerationCount_${deviceId}`, guestGenerationCount.toString());
-    }
-  }, [guestGenerationCount, deviceId]);
   
   // Effect to show the trial notification once
   useEffect(() => {
@@ -233,11 +256,20 @@ const App: React.FC = () => {
         return false;
       }
 
-      // Code is valid
+      // Code is valid. Now update the guest device record in Supabase.
       if (deviceId) {
-          setHasValidAccessCode(true);
-          localStorage.setItem(`hasValidAccessCode_${deviceId}`, 'true');
+          const { error: updateError } = await supabase
+            .from('guest_devices')
+            .update({ has_access_code: true })
+            .eq('device_id', deviceId);
+
+          if (updateError) {
+            console.error("Error updating guest device access status:", updateError);
+            // Even if update fails, we can proceed optimistically for better UX
+          }
+          setHasValidAccessCode(true); // Update state
       }
+
       setIsAccessCodeModalOpen(false);
       
       if (pendingCategory) {
@@ -349,9 +381,21 @@ const App: React.FC = () => {
       );
       setGeneratedImages(images);
       
-      // If user doesn't have a valid access code, they are a guest.
-      if (!hasValidAccessCode) {
-        setGuestGenerationCount(prev => prev + variations); // Deduct based on variations
+      // If user is a guest, update their count in Supabase for persistence
+      if (!hasValidAccessCode && deviceId) {
+        const newCount = guestGenerationCount + variations;
+        setGuestGenerationCount(newCount); // Update state immediately for UI responsiveness
+
+        // Asynchronously update Supabase; we don't block the UI for this
+        supabase
+          .from('guest_devices')
+          .update({ generation_count: newCount, last_seen_at: new Date().toISOString() })
+          .eq('device_id', deviceId)
+          .then(({ error: updateError }) => {
+            if (updateError) {
+              console.error("Failed to sync guest generation count:", updateError);
+            }
+          });
       }
 
     } catch (err: any) {
