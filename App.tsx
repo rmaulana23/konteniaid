@@ -212,8 +212,8 @@ const App: React.FC = () => {
   // Generation State
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-
 
   const isTrialOver = useMemo(() => {
     if (hasValidAccessCode) return false;
@@ -273,6 +273,7 @@ const App: React.FC = () => {
       return;
     }
     setSelectedCategory(category);
+    // Set default style for the selected category
     setAdStyle('indoor_studio'); 
     setPage('generator');
   };
@@ -375,11 +376,15 @@ const App: React.FC = () => {
       return;
     }
 
-    // New: Check if guest has enough credits for the requested variations
+    // New: Check if guest has enough credits for the requested variations/video
     if (!hasValidAccessCode) {
       const remainingCredits = GUEST_GENERATION_LIMIT - guestGenerationCount;
-      if (variations > remainingCredits) {
-        setError(`Anda meminta ${variations} variasi, tetapi hanya memiliki sisa ${remainingCredits} kredit gratis. Silakan kurangi jumlah variasi atau upgrade.`);
+      const creditsNeeded = variations;
+      if (creditsNeeded > remainingCredits) {
+          const pluralVariations = variations > 1 ? 'variasi' : 'variasi';
+          const pluralCredits = remainingCredits > 1 ? 'kredit' : 'kredit';
+          const errorMessage = `Anda meminta ${variations} ${pluralVariations}, tetapi hanya memiliki sisa ${remainingCredits} ${pluralCredits} gratis. Silakan kurangi jumlah variasi atau upgrade.`;
+        setError(errorMessage);
         return;
       }
     }
@@ -389,6 +394,7 @@ const App: React.FC = () => {
     setGeneratedImages([]);
 
     try {
+      setLoadingMessage('AI sedang bekerja, mohon tunggu...');
       const images = await generateAdPhotos(
         imageFile,
         selectedCategory,
@@ -417,7 +423,8 @@ const App: React.FC = () => {
       
       // If user is a guest, update their count in Supabase for persistence
       if (!hasValidAccessCode && deviceId) {
-        const newCount = guestGenerationCount + variations;
+        const creditsUsed = variations;
+        const newCount = guestGenerationCount + creditsUsed;
         setGuestGenerationCount(newCount); // Update state immediately for UI responsiveness
 
         // Asynchronously update Supabase; we don't block the UI for this
@@ -436,6 +443,7 @@ const App: React.FC = () => {
       setError(err.message || 'Terjadi kesalahan yang tidak diketahui.');
     } finally {
       setIsLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -464,7 +472,7 @@ const App: React.FC = () => {
               disabled={isLoading || !imageFile || isTrialOver}
               className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? ( <> <Spinner /> Membuat Gambar... </> ) : ( 'Generate Foto Iklan' )}
+              {isLoading ? ( <> <Spinner /> {'Membuat Gambar...'} </> ) : 'Generate Foto Iklan' }
             </button>
         );
 
@@ -563,13 +571,13 @@ const App: React.FC = () => {
                     {isLoading ? (
                       <>
                         <Spinner />
-                        <p className="mt-4 text-gray-600 font-semibold">AI sedang bekerja, mohon tunggu...</p>
+                        <p className="mt-4 text-gray-600 font-semibold text-center">{loadingMessage || 'AI sedang bekerja, mohon tunggu...'}</p>
                         <p className="mt-2 text-sm text-gray-500">Proses ini bisa memakan waktu hingga 1 menit.</p>
                       </>
                     ) : (
                       <>
                         <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <h2 className="mt-4 text-xl font-bold text-gray-800">Hasil Foto Anda Akan Muncul di Sini</h2>
+                        <h2 className="mt-4 text-xl font-bold text-gray-800">Hasil Anda Akan Muncul di Sini</h2>
                         <p className="text-gray-500 mt-1">Lengkapi semua opsi dan baru klik "Generate".</p>
                       </>
                     )}
