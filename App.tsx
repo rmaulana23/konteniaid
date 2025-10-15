@@ -48,21 +48,48 @@ type Page = 'landing' | 'category' | 'generator' | 'faq';
 
 const GUEST_GENERATION_LIMIT = 3;
 
-// Fungsi untuk membuat ID perangkat sederhana
+// Fungsi untuk membuat ID perangkat yang lebih kuat menggunakan Canvas Fingerprinting
 const getSimpleDeviceId = async (): Promise<string> => {
-    const { userAgent, language, hardwareConcurrency } = navigator;
-    const deviceMemory = (navigator as any).deviceMemory || '';
+    // Helper untuk canvas fingerprinting
+    const getCanvasFingerprint = (): string => {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return 'no-canvas-context';
+
+            // Gambar beberapa elemen unik untuk menghasilkan fingerprint
+            const text = 'Kontenia.id_donottrytohackme<@~`!?-/\\|>';
+            ctx.textBaseline = 'top';
+            ctx.font = '14px "Arial"';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(125, 1, 62, 20);
+            ctx.fillStyle = '#069';
+            ctx.fillText(text, 2, 15);
+            ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+            ctx.fillText(text, 4, 17);
+
+            return canvas.toDataURL();
+        } catch (e) {
+            console.error("Canvas fingerprinting failed:", e);
+            return 'canvas-fingerprint-error';
+        }
+    };
+
+    const { language, hardwareConcurrency } = navigator;
     const screenResolution = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
     const timezoneOffset = new Date().getTimezoneOffset();
+    const canvasFingerprint = getCanvasFingerprint();
 
-    const identifier = `${userAgent}${language}${hardwareConcurrency}${deviceMemory}${screenResolution}${timezoneOffset}`;
+    // Identifier baru tidak lagi menggunakan userAgent, sehingga lebih konsisten antar browser
+    const identifier = `${canvasFingerprint}${screenResolution}${hardwareConcurrency}${timezoneOffset}${language}`;
 
-    // Simple hash function (djb2)
+    // Fungsi hash sederhana (djb2)
     let hash = 5381;
     for (let i = 0; i < identifier.length; i++) {
         hash = (hash * 33) ^ identifier.charCodeAt(i);
     }
-    return String(hash >>> 0); // Ensure positive integer
+    return String(hash >>> 0); // Pastikan integer positif
 };
 
 
@@ -102,9 +129,16 @@ const App: React.FC = () => {
                     setHasValidAccessCode(data.has_access_code);
                 } else if (error && error.code === 'PGRST116') { // row not found
                     // New device, insert it with default values
+                    const now = new Date().toISOString();
                     const { error: insertError } = await supabase
                         .from('guest_devices')
-                        .insert({ device_id: id, generation_count: 0, has_access_code: false });
+                        .insert({ 
+                            device_id: id, 
+                            generation_count: 0, 
+                            has_access_code: false,
+                            first_seen_at: now,
+                            last_seen_at: now,
+                        });
                     
                     if (insertError) {
                         console.error("Error creating guest device record:", insertError);
