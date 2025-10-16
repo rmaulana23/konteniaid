@@ -44,7 +44,6 @@ export const FASHION_AD_STYLES: SelectOption<AdStyle>[] = [
 export const AUTOMOTIVE_AD_STYLES: SelectOption<AdStyle>[] = [
     { value: 'indoor_studio', label: 'Studio Showroom Style' },
     { value: 'outdoor_golden_hour', label: 'Outdoor Action' },
-    { value: 'cinematic_night', label: 'Dynamic Motion Blur' },
     { value: 'japanese_drifting', label: 'Japanese Drifting' },
     { value: 'city_street', label: 'City Street' },
 ];
@@ -69,7 +68,6 @@ export const LIVERY_STYLE_OPTIONS: SelectOption<LiveryStyle>[] = [
     { value: 'none', label: 'Tanpa Livery' },
     { value: 'racing_team', label: 'Racing Team' },
     { value: 'drift_style', label: 'Drift Style' },
-    { value: 'retro_feel', label: 'Retro Feel' },
 ];
 
 export const CAR_COLOR_OPTIONS: SelectOption<CarColor>[] = [

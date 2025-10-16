@@ -56,7 +56,8 @@ const getPrompt = (
     hasPerson?: boolean,
     personMode?: 'full_body' | 'face_only',
     hasCustomModel?: boolean,
-    kidsAgeRange?: string
+    kidsAgeRange?: string,
+    addModelToFood?: 'yes' | 'no'
 ): string => {
     let categorySpecificDetails = '';
     let styleText = 'profesional';
@@ -144,10 +145,6 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                 styleDescription = '2. Outdoor Action: vehicle captured in motion during golden hour or night street setting, surrounded by cinematic lighting, dust particles, or road reflections, evoking speed and adventure.';
                 styleText = 'Aksi Outdoor';
                 break;
-            case 'cinematic_night':
-                styleDescription = '3. Dynamic Motion Blur: vehicle driving on a highway with realistic motion blur, glowing headlights, trail light streaks, and dynamic perspective, showing a sense of power and movement.';
-                styleText = 'Dynamic Motion Blur';
-                break;
             case 'japanese_drifting':
                 styleDescription = '4. Japanese Drifting: The vehicle is captured mid-drift on a neon-lit street in a Japanese city like Tokyo at night. The scene should be dynamic, with smoke billowing from the tires, motion blur on the background, and a dramatic low-angle perspective to emphasize the action.';
                 styleText = 'Japanese Drifting';
@@ -181,7 +178,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                         modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified. The key modification is to add a full custom widebody kit, making the car visibly wider with flared wheel arches. Also, add completely redesigned, aggressive front and rear bumpers, a sleek rear spoiler, large high-end wheels, and lower the car\'s suspension for a clean, stanced look.';
                         break;
                     case 'racing_team':
-                        modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified. The main visual change is a full professional widebody race kit, including drastically redesigned aerodynamic bumpers and a large rear wing. Also, apply a full body custom racing team livery, fit it with aggressive racing wheels, and lower the suspension for a track-ready stance.';
+                        modificationPrompt = 'In addition to the scene, transform the vehicle into a full-blown professional race car. The most critical change is a full-body, vibrant "racing team" livery, absolutely covered from top to bottom in numerous prominent, colorful sponsor logos, similar to a NASCAR or GT race car. The livery must be dense with graphics, stripes, and include a clear race number. Also, apply a full professional widebody race kit with drastically redesigned aerodynamic bumpers and a large rear wing, fit it with aggressive racing wheels, and lower the suspension for a track-ready stance.';
                         break;
                     case 'off_road_look':
                         modificationPrompt = 'In addition to the scene, the vehicle must be heavily modified into a rugged off-road machine. This includes fitting large, aggressive all-terrain or mud-terrain tires with a knobby tread pattern. The suspension must be visibly lifted, showing off heavy-duty shocks. Add a front bull bar or winch bumper, a roof rack, and multiple bright auxiliary LED lights (like a light bar on the roof or pods on the bumper). The overall stance should be high and capable.';
@@ -210,9 +207,6 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
                                     break;
                                 case 'drift_style':
                                     liveryPrompt = 'Apply a vibrant, aggressive drift-style livery. This should be a mix of street and race aesthetics, featuring contrasting sharp-angled graphics, slanted sponsor logos, and possibly a two-tone color scheme. The vibe should be energetic and eye-catching, typical of drift event cars.';
-                                    break;
-                                case 'retro_feel':
-                                    liveryPrompt = 'Apply a classic, retro-inspired racing livery. Take inspiration from iconic motorsport liveries like Marlboro, Gulf, Martini, or Castrol. Use their distinct color palettes and simple, bold graphic styles to give the car a vintage racing feel.';
                                     break;
                             }
                         }
@@ -253,7 +247,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
 
         let driverPrompt = '';
         // Only add a generic AI driver if a specific person has NOT been uploaded.
-        if (!hasPerson && (adStyle === 'outdoor_golden_hour' || adStyle === 'cinematic_night' || adStyle === 'japanese_drifting')) {
+        if (!hasPerson && (adStyle === 'outdoor_golden_hour' || adStyle === 'japanese_drifting')) {
             driverPrompt = `Since the vehicle is depicted in motion, either make the windows slightly dark/tinted for a mysterious look, OR add a photorealistic but non-descript AI person in the driver's seat as if they are driving. Do not add a person for static showroom scenes.`;
         }
         
@@ -282,6 +276,33 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
     else {
         let styleDetails = '';
         let presentationInstruction = `Product Presentation Rules: The uploaded product is the hero. If the product is in a snack bag or similar packaging, you have the creative freedom to open it to reveal the contents. However, for sealed products like bottles or cans, you MUST keep the packaging professional and closed. Enhance it with condensation or splashes instead. The AI should intelligently decide if opening the package is appropriate for the specific product to make it look its best.`;
+
+        let modelPrompt = '';
+        if (addModelToFood === 'yes') {
+            if (modelGender === 'custom' && hasCustomModel) {
+                modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene. The model should be interacting with the food product in a natural, appealing way (e.g., holding it, about to eat it, presenting it with a smile). The uploaded food product must be the main focus, positioned believably with the model. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable food advertisement.`;
+            } else {
+                let ethnicityText = '';
+                if (modelGender !== 'custom' && modelEthnicity) {
+                    switch(modelEthnicity) {
+                        case 'indonesian': ethnicityText = 'an Indonesian (Southeast Asian)'; break;
+                        case 'caucasian': ethnicityText = 'a Caucasian'; break;
+                    }
+                }
+                let genderText = '';
+                switch (modelGender) {
+                    case 'man': genderText = 'male model'; break;
+                    case 'woman': genderText = 'female model'; break;
+                    case 'kids':
+                        const ageText = kidsAgeRange && kidsAgeRange.trim() !== '' ? `age around ${kidsAgeRange.trim()}` : 'age around 6-10 years old';
+                        genderText = `child model (boy or girl, ${ageText}, looking happy and natural)`;
+                        break;
+                    default: genderText = 'female model'; // Fallback
+                }
+                const fullModelDescription = `${ethnicityText} ${genderText}`.trim();
+                modelPrompt = `Incorporate a photorealistic, stylish ${fullModelDescription} into the scene. The model should be interacting naturally and appealingly with the food product, as if endorsing it in a high-end advertisement. Examples of interaction: holding the product elegantly, smiling while about to take a bite, or presenting it towards the camera. The model should enhance the product, not distract from it. The food product must remain the primary focus.`;
+            }
+        }
 
         let colorTonePrompt = '';
         if (colorTone && colorTone !== 'natural') {
@@ -312,6 +333,7 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
                     break;
             }
             categorySpecificDetails = `${presentationInstruction}
+${modelPrompt}
 The product should be presented aesthetically on a surface, NOT floating.
 The scene style is: ${styleDetails}
 ${colorTonePrompt}
@@ -343,6 +365,7 @@ Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deform
             const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
 
             categorySpecificDetails = `${presentationInstruction}
+${modelPrompt}
 Make the product levitate elegantly in the center.
 Surround the levitating product with its key ingredients or related elements, also floating dynamically.
 ${dynamicEffects}
@@ -423,7 +446,8 @@ export const generateAdPhotos = async (
   personImageFile?: File | null,
   personMode?: 'full_body' | 'face_only',
   customModelFile?: File | null,
-  kidsAgeRange?: string
+  kidsAgeRange?: string,
+  addModelToFood?: 'yes' | 'no'
 ): Promise<{ images: string[]; warning: string | null }> => {
   try {
     const genAI = initAi();
@@ -432,7 +456,8 @@ export const generateAdPhotos = async (
       category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, automotiveModification, carColor,
       vehicleType, customPrompt, customCarColor, colorTone, spoiler,
       wideBody, rims, hood, allBumper, livery, !!stickerFile,
-      !!personImageFile, personMode, !!customModelFile, kidsAgeRange
+      !!personImageFile, personMode, !!customModelFile, kidsAgeRange,
+      addModelToFood
     );
 
     // Prepare all image parts once

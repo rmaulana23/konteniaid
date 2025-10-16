@@ -196,6 +196,7 @@ const App: React.FC = () => {
   const [colorTone, setColorTone] = useState<ColorTone>('natural');
   const [customPrompt, setCustomPrompt] = useState('');
   const [customCarColor, setCustomCarColor] = useState('');
+  const [addModelToFood, setAddModelToFood] = useState<'yes' | 'no'>('no');
 
   // Custom Automotive Mod State
   const [spoiler, setSpoiler] = useState<'yes' | 'no'>('no');
@@ -264,6 +265,7 @@ const App: React.FC = () => {
     setPersonMode('full_body');
     setCustomModelFile(null);
     setCustomModelPreview(null);
+    setAddModelToFood('no');
   };
 
   const handleGoHome = () => {
@@ -410,6 +412,10 @@ const App: React.FC = () => {
     setError(null);
     setWarning(null);
     setGeneratedImages([]);
+    
+    const isFashionWithCustomModel = selectedCategory === 'fashion_lifestyle' && modelGender === 'custom';
+    const isFoodWithCustomModel = selectedCategory === 'food_beverage' && addModelToFood === 'yes' && modelGender === 'custom';
+
 
     try {
       setLoadingMessage('AI sedang bekerja, mohon tunggu...');
@@ -418,10 +424,10 @@ const App: React.FC = () => {
         selectedCategory,
         adStyle,
         variations,
-        photoFormat, // Tetap '1:1' secara default meskipun UI disembunyikan
+        photoFormat,
         aestheticStyle,
         modelGender,
-        modelGender !== 'custom' ? modelEthnicity : undefined,
+        modelEthnicity,
         automotiveModification,
         carColor,
         vehicleType,
@@ -437,8 +443,9 @@ const App: React.FC = () => {
         stickerFile,
         personImageFile,
         personImageFile ? personMode : undefined,
-        customModelFile,
-        kidsAgeRange
+        (isFashionWithCustomModel || isFoodWithCustomModel) ? customModelFile : null,
+        kidsAgeRange,
+        addModelToFood
       );
       setGeneratedImages(result.images);
       if (result.warning) {
@@ -528,9 +535,60 @@ const App: React.FC = () => {
                       title="3. Pilih Gaya Iklan" 
                       options={AD_STYLES} 
                       selectedValue={adStyle} 
-                      onValueChange={(v) => setAdStyle(v)} 
+                      onValueChange={(v) => setAdStyle(v)}
+                      disabled={addModelToFood === 'yes'}
                     />
                     <OptionSelector title="4. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
+                    <OptionSelector 
+                        title="5. Tambahkan Model?"
+                        options={YES_NO_OPTIONS}
+                        selectedValue={addModelToFood}
+                        onValueChange={(v) => {
+                          setAddModelToFood(v);
+                          if (v === 'yes') {
+                            setAdStyle('none'); // Force aesthetic style when model is added
+                          }
+                        }}
+                    />
+                    {addModelToFood === 'yes' && (
+                        <div className="space-y-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <OptionSelector title="Pilih Gender Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                            
+                            {modelGender !== 'custom' && (
+                                <OptionSelector title="Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
+                            )}
+
+                            {modelGender === 'kids' && (
+                              <div className="space-y-2">
+                                  <label htmlFor="kids-age-range" className="block text-sm font-semibold text-gray-700">Tentukan Rentang Umur (Opsional)</label>
+                                  <input 
+                                      id="kids-age-range"
+                                      type="text" 
+                                      value={kidsAgeRange}
+                                      onChange={(e) => setKidsAgeRange(e.target.value)}
+                                      placeholder="Contoh: 3-5 tahun"
+                                      className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
+                                  />
+                              </div>
+                            )}
+
+                            {modelGender === 'custom' && (
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
+                                    <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
+                                    <input 
+                                        type="file" 
+                                        onChange={handleCustomModelUpload}
+                                        accept="image/png, image/jpeg" 
+                                        className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
+                                    />
+                                    {customModelPreview && (
+                                        <img src={customModelPreview} alt="Custom model preview" className="mt-2 h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                   </>
                 )}
                 
@@ -580,14 +638,14 @@ const App: React.FC = () => {
                 )}
 
                 <OptionSelector
-                    title={selectedCategory === 'food_beverage' ? "5. Jumlah Hasil Variasi" : "5. Jumlah Hasil Variasi"}
+                    title={selectedCategory === 'food_beverage' ? "6. Jumlah Hasil Variasi" : (selectedCategory === 'fashion_lifestyle' ? "5. Jumlah Hasil Variasi" : "5. Jumlah Hasil Variasi")}
                     options={VARIATION_OPTIONS}
                     selectedValue={variations}
                     onValueChange={(v) => setVariations(v)}
                 />
                 
                 <div>
-                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">{selectedCategory === 'food_beverage' ? "6. Kustomisasi (Opsional)" : "6. Kustomisasi (Opsional)"}</label>
+                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">{selectedCategory === 'food_beverage' ? "7. Kustomisasi (Opsional)" : (selectedCategory === 'fashion_lifestyle' ? "6. Kustomisasi (Opsional)" : "6. Kustomisasi (Opsional)")}</label>
                   <textarea
                     id="custom-prompt"
                     value={customPrompt}
