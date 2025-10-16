@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle } from '../types';
+import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity } from '../types';
 
 let ai: GoogleGenAI;
 
@@ -36,7 +36,10 @@ const fileToGenerativePart = async (file: File) => {
 const getPrompt = (
     category: ProductCategory, 
     adStyle: AdStyle, 
+    photoFormat: PhotoFormat,
+    aestheticStyle?: AestheticStyle,
     modelGender?: ModelGender, 
+    modelEthnicity?: ModelEthnicity,
     automotiveModification?: AutomotiveModification, 
     carColor?: CarColor, 
     vehicleType?: VehicleType, 
@@ -55,7 +58,8 @@ const getPrompt = (
     hasCustomModel?: boolean,
     kidsAgeRange?: string
 ): string => {
-    let basePrompt = '';
+    let categorySpecificDetails = '';
+    let styleText = 'profesional';
 
     // Logika khusus untuk Fashion & Lifestyle
     if (category === 'fashion_lifestyle') {
@@ -63,24 +67,41 @@ const getPrompt = (
         switch (adStyle) {
             case 'indoor_studio':
                 styleDescription = '1. Studio Editorial Style – clean softbox lighting, minimal gradient background, elegant pose, neutral color tones, fashion catalog aesthetic.';
+                styleText = 'Studio Editorial';
                 break;
             case 'outdoor_golden_hour':
                 styleDescription = '2. Urban Lifestyle Style – outdoor street or golden hour city scene, warm lighting, cinematic flares, candid natural posture, trendy vibe.';
+                styleText = 'Urban Lifestyle';
                 break;
             case 'lifestyle_natural':
                 styleDescription = '3. Aesthetic Daily Life Style – cozy indoor environment (home, café, park), soft daylight, natural interaction, minimal props, calm lifestyle atmosphere.';
+                styleText = 'Aesthetic Daily Life';
                 break;
             case 'professional_kitchen':
                 styleDescription = '4. Professional Kitchen – sleek, modern kitchen setting with stainless steel appliances, marble countertops, and under-cabinet lighting. The model interacts naturally with the environment, creating a sophisticated and clean culinary lifestyle aesthetic.';
+                styleText = 'Dapur Profesional';
                 break;
             default:
                 styleDescription = 'Studio Editorial Style – clean softbox lighting, minimal gradient background, elegant pose, neutral color tones, fashion catalog aesthetic.';
+                styleText = 'Studio Editorial';
         }
         
         let modelPrompt = '';
         if (modelGender === 'custom' && hasCustomModel) {
             modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}. The uploaded fashion product must be realistically placed ON this model, replacing whatever they were originally wearing. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
         } else {
+            let ethnicityText = '';
+            if (modelGender !== 'custom' && modelEthnicity) {
+                switch(modelEthnicity) {
+                    case 'indonesian':
+                        ethnicityText = 'an Indonesian (Southeast Asian)';
+                        break;
+                    case 'caucasian':
+                        ethnicityText = 'a Caucasian';
+                        break;
+                }
+            }
+
             let genderText = '';
             switch (modelGender) {
                 case 'man':
@@ -98,10 +119,12 @@ const getPrompt = (
                 default:
                     genderText = 'female model'; // Fallback
             }
-            modelPrompt = `Make the product appear realistically worn or held by a stylish ${genderText}, photographed in the following commercial setting: ${styleDescription}`;
+            
+            const fullModelDescription = `${ethnicityText} ${genderText}`.trim();
+            modelPrompt = `Make the product appear realistically worn or held by a stylish ${fullModelDescription}, photographed in the following commercial setting: ${styleDescription}`;
         }
 
-        basePrompt = `Transform the uploaded product photo into a professional fashion and lifestyle advertisement mockup. ${modelPrompt}
+        categorySpecificDetails = `${modelPrompt}
 Ensure the product remains the main focus, well-lit, and clearly visible. Add subtle depth of field, professional lighting, and realistic skin tone.
 The overall image should look like a premium ad campaign photo used for brand mockups or social media content.
 Ultra-realistic 8K resolution, high dynamic range, editorial photography quality, shallow depth of field, captured with 85mm lens, commercial lighting setup.
@@ -115,21 +138,27 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
         switch (adStyle) {
             case 'indoor_studio':
                 styleDescription = '1. Showroom Premium: vehicle displayed in a glossy, minimalist indoor environment with soft reflection on the floor, professional studio lighting, high contrast, metallic highlights, and brand-like luxury presentation.';
+                styleText = 'Showroom Premium';
                 break;
             case 'outdoor_golden_hour':
                 styleDescription = '2. Outdoor Action: vehicle captured in motion during golden hour or night street setting, surrounded by cinematic lighting, dust particles, or road reflections, evoking speed and adventure.';
+                styleText = 'Aksi Outdoor';
                 break;
             case 'cinematic_night':
                 styleDescription = '3. Dynamic Motion Blur: vehicle driving on a highway with realistic motion blur, glowing headlights, trail light streaks, and dynamic perspective, showing a sense of power and movement.';
+                styleText = 'Dynamic Motion Blur';
                 break;
             case 'japanese_drifting':
                 styleDescription = '4. Japanese Drifting: The vehicle is captured mid-drift on a neon-lit street in a Japanese city like Tokyo at night. The scene should be dynamic, with smoke billowing from the tires, motion blur on the background, and a dramatic low-angle perspective to emphasize the action.';
+                styleText = 'Japanese Drifting';
                 break;
             case 'city_street':
                 styleDescription = '5. City Street: The vehicle is parked realistically on the side of a busy, vibrant city street at dusk. The scene features authentic reflections from streetlights and storefronts on the car\'s body, with pedestrians and traffic blurred in the background to maintain focus on the product.';
+                styleText = 'City Street';
                 break;
             default:
                 styleDescription = '1. Showroom Premium: vehicle displayed in a glossy, minimalist indoor environment with soft reflection on the floor, professional studio lighting, high contrast, metallic highlights, and brand-like luxury presentation.';
+                 styleText = 'Showroom Premium';
         }
         
         let modificationPrompt = '';
@@ -238,8 +267,7 @@ Negative Prompt: no watermark, no text, no logo, no multiple models, no distorte
         }
 
 
-        basePrompt = `Generate a professional automotive advertisement based on the uploaded vehicle photo.
-${colorPrompt}
+        categorySpecificDetails = `${colorPrompt}
 ${modificationPrompt}
 ${driverPrompt}
 ${personPrompt}
@@ -253,20 +281,7 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
     // Logika fallback untuk Makanan & Minuman
     else {
         let styleDetails = '';
-        switch (adStyle) {
-            case 'indoor_studio':
-                styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
-                break;
-            case 'outdoor_golden_hour':
-                styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
-                break;
-            case 'cinematic_night':
-                styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
-                break;
-            case 'lifestyle_natural':
-                styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
-                break;
-        }
+        let presentationInstruction = `Product Presentation Rules: The uploaded product is the hero. If the product is in a snack bag or similar packaging, you have the creative freedom to open it to reveal the contents. However, for sealed products like bottles or cans, you MUST keep the packaging professional and closed. Enhance it with condensation or splashes instead. The AI should intelligently decide if opening the package is appropriate for the specific product to make it look its best.`;
 
         let colorTonePrompt = '';
         if (colorTone && colorTone !== 'natural') {
@@ -279,14 +294,55 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
                     break;
             }
         }
-
-        const presentationInstruction = `Product Presentation Rules: The uploaded product is the hero. If the product is in a snack bag or similar packaging, you have the creative freedom to open it to reveal the contents. However, for sealed products like bottles or cans, you MUST keep the packaging professional and closed. Enhance it with condensation or splashes instead. The AI should intelligently decide if opening the package is appropriate for the specific product to make it look its best.`;
         
-        const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
+        // LOGIKA BARU UNTUK GAYA ESTETIK
+        if (adStyle === 'none') {
+            switch (aestheticStyle) {
+                case 'cafe_minimalist':
+                    styleDetails = "Place the product naturally on a clean, minimalist cafe table. Use soft, bright, natural daylight from a nearby window. The background should be a slightly blurred, aesthetic cafe interior. Add minimal props like a small plant or a cup. The focus is on a clean, bright, and inviting atmosphere.";
+                    styleText = 'Kafe Minimalis';
+                    break;
+                case 'dramatic_spotlight':
+                    styleDetails = "Place the product on a dark, textured surface like slate or dark wood. Use a single, dramatic spotlight from above to highlight the product's texture and form, creating deep shadows. The background should be completely dark and out of focus. This style creates a premium, moody, and sophisticated look.";
+                    styleText = 'Sorotan Dramatis';
+                    break;
+                case 'warm_rustic':
+                    styleDetails = "Place the product on a rustic wooden table or surface. Surround it with natural, complementary elements like whole ingredients or rustic fabrics. Use warm, soft, ambient lighting to create a cozy, homemade, and authentic feel. The composition should be natural and slightly imperfect.";
+                    styleText = 'Gaya Rustik Hangat';
+                    break;
+            }
+            categorySpecificDetails = `${presentationInstruction}
+The product should be presented aesthetically on a surface, NOT floating.
+The scene style is: ${styleDetails}
+${colorTonePrompt}
+The final image must look like a real, high-end commercial photograph.
+Focus on realistic textures, professional lighting, and a beautiful composition.
+8K resolution, ultra-realistic, hero shot.
+Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deformities, floating product.`;
 
-        basePrompt = `Generate a photorealistic professional advertisement photo based on the uploaded product image.
-Do not change the product itself, but place it in a new, hyper-realistic scene.
-${presentationInstruction}
+        } else { // LOGIKA LAMA UNTUK GAYA MELAYANG
+            switch (adStyle) {
+                case 'indoor_studio':
+                    styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
+                    styleText = 'Studio Profesional';
+                    break;
+                case 'outdoor_golden_hour':
+                    styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
+                    styleText = 'Outdoor Golden Hour';
+                    break;
+                case 'cinematic_night':
+                    styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
+                    styleText = 'Sinematik Malam Hari';
+                    break;
+                case 'lifestyle_natural':
+                    styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
+                    styleText = 'Gaya Hidup Natural';
+                    break;
+            }
+
+            const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
+
+            categorySpecificDetails = `${presentationInstruction}
 Make the product levitate elegantly in the center.
 Surround the levitating product with its key ingredients or related elements, also floating dynamically.
 ${dynamicEffects}
@@ -296,13 +352,49 @@ The final image must look like a real, high-end commercial photograph.
 Focus on realistic textures, cinematic lighting, and a professional composition.
 8K resolution, ultra-realistic, hero shot.
 Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deformities, extra objects overlapping the product, do not place the product on a plate or in another container.`;
-    }
-
-    if (customPrompt && customPrompt.trim() !== '') {
-        basePrompt += `\n\nIMPORTANT: Also apply this specific instruction from the user: "${customPrompt.trim()}"`;
+        }
     }
     
-    return basePrompt;
+    // START OF FIX: Restructure prompt to be more forceful about aspect ratio
+    const aspectRatioString = {
+        '1:1': '1:1 (persegi)',
+        '4:5': '4:5 (potret)',
+        '9:16': '9:16 (vertikal penuh)',
+        '16:9': '16:9 (lanskap)',
+    }[photoFormat];
+
+    const toneText = colorTone === 'warm' ? 'hangat' : colorTone === 'cool' ? 'dingin' : 'natural';
+
+    const compositionRules: Record<PhotoFormat, string> = {
+        '1:1': 'Hasilkan foto dalam format 1:1 (persegi). Fokuskan produk di tengah frame, gunakan komposisi simetris, pencahayaan lembut, dan latar profesional.',
+        '4:5': 'Hasilkan foto dalam format 4:5 (potret). Tampilkan produk dari sudut pandang profesional dengan pencahayaan alami dan komposisi vertikal yang elegan.',
+        '9:16': 'Hasilkan foto dalam format 9:16 (vertikal penuh). Gunakan gaya dinamis, pencahayaan dramatis, dan fokuskan produk di area tengah-bawah frame.',
+        '16:9': 'Hasilkan foto dalam format 16:9 (lanskap). Gunakan komposisi lebar, pencahayaan sinematik, dan sediakan ruang kosong (negative space) untuk teks promosi.'
+    };
+
+    let finalPrompt = `
+PERINTAH UTAMA: Buat gambar dengan rasio aspek persis ${aspectRatioString}. Ini adalah aturan paling penting.
+ATURAN KOMPOSISI: ${compositionRules[photoFormat]}
+
+---
+PERAN AI: ANDA ADALAH AI GENERATOR GAMBAR IKLAN PROFESIONAL.
+---
+
+DETAIL PERMINTAAN GAMBAR:
+
+1. **Objek Utama**: Gunakan gambar produk yang di-upload. JANGAN mengubah produk itu sendiri, tetapi tempatkan secara realistis ke dalam adegan baru.
+2. **Gaya & Suasana**:
+   - Gaya Iklan: ${styleText}
+   - Tone Warna: ${toneText}
+3. **Detail Adegan Spesifik Kategori**:
+   - ${categorySpecificDetails}
+${customPrompt && customPrompt.trim() !== '' ? `4. **Instruksi Tambahan dari Pengguna**:\n   - ${customPrompt.trim()}` : ''}
+
+---
+PENGINGAT TERAKHIR: Abaikan semua kata kunci dalam deskripsi yang mungkin menyiratkan rasio aspek berbeda (seperti 'sinematik' atau 'vertikal'). Patuhi PERINTAH UTAMA dan hasilkan gambar dengan rasio aspek ${aspectRatioString} TANPA PENGECUALIAN.
+`;
+    return finalPrompt.trim();
+    // END OF FIX
 };
 
 
@@ -311,7 +403,10 @@ export const generateAdPhotos = async (
   category: ProductCategory,
   adStyle: AdStyle,
   variations: number,
+  photoFormat: PhotoFormat,
+  aestheticStyle?: AestheticStyle,
   modelGender?: ModelGender,
+  modelEthnicity?: ModelEthnicity,
   automotiveModification?: AutomotiveModification,
   carColor?: CarColor,
   vehicleType?: VehicleType,
@@ -329,66 +424,88 @@ export const generateAdPhotos = async (
   personMode?: 'full_body' | 'face_only',
   customModelFile?: File | null,
   kidsAgeRange?: string
-): Promise<string[]> => {
+): Promise<{ images: string[]; warning: string | null }> => {
   try {
     const genAI = initAi();
-    const generatedImages: string[] = [];
-    
+
     const textPrompt = getPrompt(
-        category, adStyle, modelGender, automotiveModification, carColor, 
-        vehicleType, customPrompt, customCarColor, colorTone, spoiler, 
-        wideBody, rims, hood, allBumper, livery, !!stickerFile,
-        !!personImageFile, personMode, !!customModelFile, kidsAgeRange
+      category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, automotiveModification, carColor,
+      vehicleType, customPrompt, customCarColor, colorTone, spoiler,
+      wideBody, rims, hood, allBumper, livery, !!stickerFile,
+      !!personImageFile, personMode, !!customModelFile, kidsAgeRange
     );
 
+    // Prepare all image parts once
     const imagePart = await fileToGenerativePart(imageFile);
     const imageParts = [imagePart];
-    
+
     if (stickerFile) {
-        const stickerImagePart = await fileToGenerativePart(stickerFile);
-        imageParts.push(stickerImagePart);
+      const stickerImagePart = await fileToGenerativePart(stickerFile);
+      imageParts.push(stickerImagePart);
     }
     if (personImageFile) {
-        const personImagePart = await fileToGenerativePart(personImageFile);
-        imageParts.push(personImagePart);
+      const personImagePart = await fileToGenerativePart(personImageFile);
+      imageParts.push(personImagePart);
     }
     if (customModelFile) {
-        const customModelPart = await fileToGenerativePart(customModelFile);
-        imageParts.push(customModelPart);
+      const customModelPart = await fileToGenerativePart(customModelFile);
+      imageParts.push(customModelPart);
     }
 
     const contentParts = [...imageParts, { text: textPrompt }];
 
+    // Create an array of promises to run image generation in parallel
+    const generationPromises = Array.from({ length: variations }, () =>
+      genAI.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: contentParts,
+        },
+        config: {
+          responseModalities: [Modality.IMAGE, Modality.TEXT],
+          // Add a random seed to ensure each generation is unique
+          seed: Math.floor(Math.random() * 1000000),
+        },
+      })
+    );
+    
+    const responses = await Promise.all(generationPromises);
 
-    for (let i = 0; i < variations; i++) {
-        const response = await genAI.models.generateContent({
-            model: 'gemini-2.5-flash-image',
-            contents: {
-              parts: contentParts,
-            },
-            config: {
-                responseModalities: [Modality.IMAGE, Modality.TEXT],
-            },
-        });
+    const generatedImages: string[] = [];
+    let safetyBlockCount = 0;
 
-        const imagePartResponse = response.candidates?.[0]?.content.parts.find(part => part.inlineData);
+    for (const response of responses) {
+      const imagePartResponse = response.candidates?.[0]?.content.parts.find(part => part.inlineData);
 
-        if (imagePartResponse?.inlineData) {
-            const base64ImageBytes: string = imagePartResponse.inlineData.data;
-            const mimeType = imagePartResponse.inlineData.mimeType;
-            const imageUrl = `data:${mimeType};base64,${base64ImageBytes}`;
-            generatedImages.push(imageUrl);
+      if (imagePartResponse?.inlineData) {
+        const base64ImageBytes: string = imagePartResponse.inlineData.data;
+        const mimeType = imagePartResponse.inlineData.mimeType;
+        const imageUrl = `data:${mimeType};base64,${base64ImageBytes}`;
+        generatedImages.push(imageUrl);
+      } else {
+        // Log the reason for failure for debugging
+        console.warn("Gemini response did not contain an image part:", JSON.stringify(response, null, 2));
+        if (response.candidates?.[0]?.finishReason === 'SAFETY') {
+            safetyBlockCount++;
         }
+      }
     }
 
-    if (generatedImages.length !== variations) {
-      throw new Error(`Gagal menghasilkan jumlah gambar yang diminta. Diharapkan ${variations}, diterima ${generatedImages.length}. Silakan coba lagi.`);
+    let warning: string | null = null;
+    if (generatedImages.length < variations) {
+      const failedCount = variations - generatedImages.length;
+      if (safetyBlockCount > 0) {
+        warning = `Berhasil membuat ${generatedImages.length} gambar. Gagal membuat ${failedCount} gambar lainnya karena filter keamanan AI. Coba sesuaikan prompt atau gunakan gambar lain.`;
+      } else {
+        warning = `Berhasil membuat ${generatedImages.length} gambar. Gagal membuat ${failedCount} gambar lainnya karena kesalahan. Silakan coba lagi.`;
+      }
     }
 
-    return generatedImages;
+    return { images: generatedImages, warning };
 
   } catch (error) {
     console.error("Error generating images with Gemini:", error);
-    throw new Error("Terjadi kesalahan saat membuat foto iklan. Silakan coba lagi.");
+    // Throw a generic message for unexpected errors. The partial success case is handled above.
+    throw new Error("Terjadi kesalahan tak terduga saat membuat foto iklan. Silakan coba lagi.");
   }
 };

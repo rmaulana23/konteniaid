@@ -1,9 +1,22 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
   { value: 'fashion_lifestyle', label: 'Fashion & Lifestyle' },
   { value: 'automotive', label: 'Otomotif & Modif' },
+];
+
+export const PHOTO_FORMAT_OPTIONS: SelectOption<PhotoFormat>[] = [
+  { value: '1:1', label: '1:1 (Square)' },
+  { value: '4:5', label: '4:5 (Portrait)' },
+  { value: '9:16', label: '9:16 (Full Vertical)' },
+  { value: '16:9', label: '16:9 (Landscape)' },
+];
+
+export const AESTHETIC_STYLE_OPTIONS: SelectOption<AestheticStyle>[] = [
+  { value: 'cafe_minimalist', label: 'Minimalist Cafe' },
+  { value: 'dramatic_spotlight', label: 'Dramatic Spotlight' },
+  { value: 'warm_rustic', label: 'Warm Rustic Style' },
 ];
 
 export const VEHICLE_TYPE_OPTIONS: SelectOption<VehicleType>[] = [
@@ -12,10 +25,11 @@ export const VEHICLE_TYPE_OPTIONS: SelectOption<VehicleType>[] = [
 ];
 
 export const AD_STYLES: SelectOption<AdStyle>[] = [
-  { value: 'indoor_studio', label: 'Indoor Studio' },
-  { value: 'outdoor_golden_hour', label: 'Outdoor Golden Hour' },
-  { value: 'cinematic_night', label: 'Cinematic Night' },
-  { value: 'lifestyle_natural', label: 'Lifestyle Natural' },
+  { value: 'none', label: 'Tanpa Gaya (Estetik Saja)' },
+  { value: 'indoor_studio', label: 'Indoor Studio (Melayang)' },
+  { value: 'outdoor_golden_hour', label: 'Outdoor Golden Hour (Melayang)' },
+  { value: 'cinematic_night', label: 'Cinematic Night (Melayang)' },
+  { value: 'lifestyle_natural', label: 'Lifestyle Natural (Melayang)' },
 ];
 
 // Opsi khusus untuk kategori Fashion & Lifestyle
@@ -79,6 +93,11 @@ export const MODEL_GENDER_OPTIONS: SelectOption<ModelGender>[] = [
     { value: 'man', label: 'Men' },
     { value: 'kids', label: 'Kids' },
     { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
+];
+
+export const MODEL_ETHNICITY_OPTIONS: SelectOption<ModelEthnicity>[] = [
+    { value: 'indonesian', label: 'Indonesia (Lokal)' },
+    { value: 'caucasian', label: 'Bule' },
 ];
 
 export const VARIATION_OPTIONS: SelectOption<number>[] = [

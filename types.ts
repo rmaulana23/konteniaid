@@ -1,8 +1,14 @@
 export type ProductCategory = 'food_beverage' | 'fashion_lifestyle' | 'automotive';
 
-export type AdStyle = 'indoor_studio' | 'outdoor_golden_hour' | 'cinematic_night' | 'lifestyle_natural' | 'japanese_drifting' | 'city_street' | 'professional_kitchen';
+export type PhotoFormat = '1:1' | '4:5' | '9:16' | '16:9';
+
+export type AdStyle = 'none' | 'indoor_studio' | 'outdoor_golden_hour' | 'cinematic_night' | 'lifestyle_natural' | 'japanese_drifting' | 'city_street' | 'professional_kitchen';
+
+export type AestheticStyle = 'cafe_minimalist' | 'dramatic_spotlight' | 'warm_rustic';
 
 export type ModelGender = 'woman' | 'man' | 'kids' | 'custom';
+
+export type ModelEthnicity = 'indonesian' | 'caucasian';
 
 export type VehicleType = 'mobil' | 'motor';
 

@@ -6,6 +6,7 @@ interface OptionSelectorProps<T extends string | number> {
   options: SelectOption<T>[];
   selectedValue: T;
   onValueChange: (value: T) => void;
+  disabled?: boolean;
 }
 
 const OptionSelector = <T extends string | number,>({
@@ -13,6 +14,7 @@ const OptionSelector = <T extends string | number,>({
   options,
   selectedValue,
   onValueChange,
+  disabled = false,
 }: OptionSelectorProps<T>) => {
   const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const value = event.target.value;
@@ -30,13 +32,14 @@ const OptionSelector = <T extends string | number,>({
 
   return (
     <div className="w-full">
-      <label htmlFor={id} className="block text-lg font-semibold mb-2 text-gray-800">{title}</label>
+      <label htmlFor={id} className={`block text-lg font-semibold mb-2 text-gray-800 ${disabled ? 'opacity-50' : ''}`}>{title}</label>
       <div className="relative">
         <select
           id={id}
           value={selectedValue}
           onChange={handleChange}
-          className="w-full appearance-none bg-white border border-gray-300 text-gray-900 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors"
+          disabled={disabled}
+          className={`w-full appearance-none bg-white border border-gray-300 text-gray-900 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors ${disabled ? 'opacity-50 bg-gray-100 cursor-not-allowed' : ''}`}
         >
           {options.map((option) => (
             <option key={String(option.value)} value={option.value}>

@@ -21,11 +21,14 @@ import {
   ProductCategory,
   AdStyle,
   ModelGender,
+  ModelEthnicity,
   AutomotiveModification,
   CarColor,
   VehicleType,
   ColorTone,
   LiveryStyle,
+  PhotoFormat,
+  AestheticStyle,
 } from './types';
 
 import {
@@ -34,6 +37,7 @@ import {
   FASHION_AD_STYLES,
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
+  MODEL_ETHNICITY_OPTIONS,
   AUTOMOTIVE_MODIFICATION_OPTIONS,
   MOTORCYCLE_MODIFICATION_OPTIONS,
   CAR_COLOR_OPTIONS,
@@ -42,6 +46,7 @@ import {
   VARIATION_OPTIONS,
   YES_NO_OPTIONS,
   LIVERY_STYLE_OPTIONS,
+  AESTHETIC_STYLE_OPTIONS,
 } from './constants';
 
 type Page = 'landing' | 'category' | 'generator' | 'faq';
@@ -178,9 +183,12 @@ const App: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
-  const [adStyle, setAdStyle] = useState<AdStyle>('indoor_studio');
+  const [photoFormat, setPhotoFormat] = useState<PhotoFormat>('1:1');
+  const [aestheticStyle, setAestheticStyle] = useState<AestheticStyle>('cafe_minimalist');
+  const [adStyle, setAdStyle] = useState<AdStyle>('none');
   const [variations, setVariations] = useState<number>(1);
   const [modelGender, setModelGender] = useState<ModelGender>('woman');
+  const [modelEthnicity, setModelEthnicity] = useState<ModelEthnicity>('indonesian');
   const [kidsAgeRange, setKidsAgeRange] = useState(''); // New state for kids age range
   const [automotiveModification, setAutomotiveModification] = useState<AutomotiveModification>('none');
   const [carColor, setCarColor] = useState<CarColor>('original');
@@ -214,6 +222,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const isTrialOver = useMemo(() => {
     if (hasValidAccessCode) return false;
@@ -225,12 +234,16 @@ const App: React.FC = () => {
     setSelectedCategory(null);
     setImageFile(null);
     setUploadedImagePreview(null);
-    setAdStyle('indoor_studio');
+    setPhotoFormat('1:1');
+    setAestheticStyle('cafe_minimalist');
+    setAdStyle('none');
     setVariations(1);
     setGeneratedImages([]);
     setError(null);
+    setWarning(null);
     // Reset category-specific states
     setModelGender('woman');
+    setModelEthnicity('indonesian');
     setKidsAgeRange('');
     setAutomotiveModification('none');
     setCarColor('original');
@@ -274,7 +287,11 @@ const App: React.FC = () => {
     }
     setSelectedCategory(category);
     // Set default style for the selected category
-    setAdStyle('indoor_studio'); 
+    if (category === 'food_beverage') {
+        setAdStyle('none');
+    } else {
+        setAdStyle('indoor_studio'); 
+    }
     setPage('generator');
   };
 
@@ -391,16 +408,20 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setError(null);
+    setWarning(null);
     setGeneratedImages([]);
 
     try {
       setLoadingMessage('AI sedang bekerja, mohon tunggu...');
-      const images = await generateAdPhotos(
+      const result = await generateAdPhotos(
         imageFile,
         selectedCategory,
         adStyle,
         variations,
+        photoFormat, // Tetap '1:1' secara default meskipun UI disembunyikan
+        aestheticStyle,
         modelGender,
+        modelGender !== 'custom' ? modelEthnicity : undefined,
         automotiveModification,
         carColor,
         vehicleType,
@@ -419,24 +440,29 @@ const App: React.FC = () => {
         customModelFile,
         kidsAgeRange
       );
-      setGeneratedImages(images);
+      setGeneratedImages(result.images);
+      if (result.warning) {
+        setWarning(result.warning);
+      }
       
-      // If user is a guest, update their count in Supabase for persistence
+      // If user is a guest, update their count based on successful generations
       if (!hasValidAccessCode && deviceId) {
-        const creditsUsed = variations;
-        const newCount = guestGenerationCount + creditsUsed;
-        setGuestGenerationCount(newCount); // Update state immediately for UI responsiveness
+        const creditsUsed = result.images.length;
+        if (creditsUsed > 0) {
+            const newCount = guestGenerationCount + creditsUsed;
+            setGuestGenerationCount(newCount); // Update state immediately for UI responsiveness
 
-        // Asynchronously update Supabase; we don't block the UI for this
-        supabase
-          .from('guest_devices')
-          .update({ generation_count: newCount, last_seen_at: new Date().toISOString() })
-          .eq('device_id', deviceId)
-          .then(({ error: updateError }) => {
-            if (updateError) {
-              console.error("Failed to sync guest generation count:", updateError);
-            }
-          });
+            // Asynchronously update Supabase
+            supabase
+              .from('guest_devices')
+              .update({ generation_count: newCount, last_seen_at: new Date().toISOString() })
+              .eq('device_id', deviceId)
+              .then(({ error: updateError }) => {
+                if (updateError) {
+                  console.error("Failed to sync guest generation count:", updateError);
+                }
+              });
+        }
       }
 
     } catch (err: any) {
@@ -488,16 +514,35 @@ const App: React.FC = () => {
                 
                 {selectedCategory === 'food_beverage' && (
                   <>
-                    <OptionSelector title="2. Pilih Gaya Foto" options={AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
-                    <OptionSelector title="3. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
+                    <OptionSelector 
+                      title="2. Pilih Gaya Foto" 
+                      options={AESTHETIC_STYLE_OPTIONS} 
+                      selectedValue={aestheticStyle} 
+                      onValueChange={(v) => {
+                        setAestheticStyle(v);
+                        setAdStyle('none'); // Otomatis set Gaya Iklan ke 'none'
+                      }}
+                      disabled={adStyle !== 'none'} // Nonaktifkan jika gaya iklan melayang dipilih
+                    />
+                    <OptionSelector 
+                      title="3. Pilih Gaya Iklan" 
+                      options={AD_STYLES} 
+                      selectedValue={adStyle} 
+                      onValueChange={(v) => setAdStyle(v)} 
+                    />
+                    <OptionSelector title="4. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
                   </>
                 )}
                 
                 {selectedCategory === 'fashion_lifestyle' && (
                   <>
-                    <OptionSelector title="2. Pilih Gaya Foto" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
+                    <OptionSelector title="2. Pilih Gaya Iklan" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
                     <OptionSelector title="3. Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
                     
+                    {modelGender !== 'custom' && (
+                        <OptionSelector title="4. Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
+                    )}
+
                     {modelGender === 'kids' && (
                       <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
                           <label htmlFor="kids-age-range" className="block text-sm font-semibold text-gray-700">Tentukan Rentang Umur (Opsional)</label>
@@ -531,18 +576,18 @@ const App: React.FC = () => {
                 )}
 
                 {selectedCategory === 'automotive' && (
-                    <OptionSelector title="2. Pilih Gaya Foto" options={AUTOMOTIVE_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
+                    <OptionSelector title="2. Pilih Gaya Iklan" options={AUTOMOTIVE_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
                 )}
 
                 <OptionSelector
-                    title="4. Jumlah Hasil Variasi"
+                    title={selectedCategory === 'food_beverage' ? "5. Jumlah Hasil Variasi" : "5. Jumlah Hasil Variasi"}
                     options={VARIATION_OPTIONS}
                     selectedValue={variations}
                     onValueChange={(v) => setVariations(v)}
                 />
                 
                 <div>
-                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">5. Kustomisasi (Opsional)</label>
+                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">{selectedCategory === 'food_beverage' ? "6. Kustomisasi (Opsional)" : "6. Kustomisasi (Opsional)"}</label>
                   <textarea
                     id="custom-prompt"
                     value={customPrompt}
@@ -561,6 +606,12 @@ const App: React.FC = () => {
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
                         <p className="font-bold">Terjadi Kesalahan</p>
                         <p>{error}</p>
+                    </div>
+                 )}
+                 {warning && !isLoading && (
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-md" role="alert">
+                        <p className="font-bold">Pemberitahuan</p>
+                        <p>{warning}</p>
                     </div>
                  )}
 
