@@ -6,6 +6,8 @@ export type AdStyle = 'none' | 'indoor_studio' | 'outdoor_golden_hour' | 'cinema
 
 export type AestheticStyle = 'cafe_minimalist' | 'dramatic_spotlight' | 'warm_rustic';
 
+export type ObjectStyle = 'surface' | 'levitating';
+
 export type ModelGender = 'woman' | 'man' | 'kids' | 'custom';
 
 export type ModelEthnicity = 'indonesian' | 'caucasian';

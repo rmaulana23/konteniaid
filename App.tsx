@@ -29,11 +29,12 @@ import {
   LiveryStyle,
   PhotoFormat,
   AestheticStyle,
+  ObjectStyle,
 } from './types';
 
 import {
   PRODUCT_CATEGORIES,
-  AD_STYLES,
+  LEVITATING_FOOD_AD_STYLES,
   FASHION_AD_STYLES,
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
@@ -47,6 +48,7 @@ import {
   YES_NO_OPTIONS,
   LIVERY_STYLE_OPTIONS,
   AESTHETIC_STYLE_OPTIONS,
+  OBJECT_STYLE_OPTIONS,
 } from './constants';
 
 type Page = 'landing' | 'category' | 'generator' | 'faq';
@@ -185,6 +187,7 @@ const App: React.FC = () => {
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [photoFormat, setPhotoFormat] = useState<PhotoFormat>('1:1');
   const [aestheticStyle, setAestheticStyle] = useState<AestheticStyle>('cafe_minimalist');
+  const [objectStyle, setObjectStyle] = useState<ObjectStyle>('surface');
   const [adStyle, setAdStyle] = useState<AdStyle>('none');
   const [variations, setVariations] = useState<number>(1);
   const [modelGender, setModelGender] = useState<ModelGender>('woman');
@@ -237,6 +240,7 @@ const App: React.FC = () => {
     setUploadedImagePreview(null);
     setPhotoFormat('1:1');
     setAestheticStyle('cafe_minimalist');
+    setObjectStyle('surface');
     setAdStyle('none');
     setVariations(1);
     setGeneratedImages([]);
@@ -291,6 +295,7 @@ const App: React.FC = () => {
     // Set default style for the selected category
     if (category === 'food_beverage') {
         setAdStyle('none');
+        setObjectStyle('surface');
     } else {
         setAdStyle('indoor_studio'); 
     }
@@ -445,7 +450,8 @@ const App: React.FC = () => {
         personImageFile ? personMode : undefined,
         (isFashionWithCustomModel || isFoodWithCustomModel) ? customModelFile : null,
         kidsAgeRange,
-        addModelToFood
+        addModelToFood,
+        selectedCategory === 'food_beverage' ? objectStyle : undefined
       );
       setGeneratedImages(result.images);
       if (result.warning) {
@@ -521,23 +527,40 @@ const App: React.FC = () => {
                 
                 {selectedCategory === 'food_beverage' && (
                   <>
-                    <OptionSelector 
-                      title="2. Pilih Gaya Foto" 
-                      options={AESTHETIC_STYLE_OPTIONS} 
-                      selectedValue={aestheticStyle} 
-                      onValueChange={(v) => {
-                        setAestheticStyle(v);
-                        setAdStyle('none'); // Otomatis set Gaya Iklan ke 'none'
-                      }}
-                      disabled={adStyle !== 'none'} // Nonaktifkan jika gaya iklan melayang dipilih
+                    <OptionSelector
+                        title="2. Pilih Gaya Objek"
+                        options={OBJECT_STYLE_OPTIONS}
+                        selectedValue={objectStyle}
+                        onValueChange={(v) => {
+                            const newObjectStyle = v as ObjectStyle;
+                            setObjectStyle(newObjectStyle);
+                            if (newObjectStyle === 'levitating') {
+                                setAdStyle('indoor_studio');
+                                setAddModelToFood('no');
+                            } else { // surface
+                                setAdStyle('none');
+                            }
+                        }}
                     />
-                    <OptionSelector 
-                      title="3. Pilih Gaya Iklan" 
-                      options={AD_STYLES} 
-                      selectedValue={adStyle} 
-                      onValueChange={(v) => setAdStyle(v)}
-                      disabled={addModelToFood === 'yes'}
-                    />
+
+                    {objectStyle === 'surface' && (
+                      <OptionSelector 
+                        title="3. Pilih Gaya Foto" 
+                        options={AESTHETIC_STYLE_OPTIONS} 
+                        selectedValue={aestheticStyle} 
+                        onValueChange={(v) => setAestheticStyle(v as AestheticStyle)}
+                      />
+                    )}
+
+                    {objectStyle === 'levitating' && (
+                      <OptionSelector 
+                        title="3. Pilih Gaya Iklan" 
+                        options={LEVITATING_FOOD_AD_STYLES} 
+                        selectedValue={adStyle} 
+                        onValueChange={(v) => setAdStyle(v as AdStyle)}
+                      />
+                    )}
+
                     <OptionSelector title="4. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
                     <OptionSelector 
                         title="5. Tambahkan Model?"
@@ -546,9 +569,11 @@ const App: React.FC = () => {
                         onValueChange={(v) => {
                           setAddModelToFood(v);
                           if (v === 'yes') {
-                            setAdStyle('none'); // Force aesthetic style when model is added
+                            setObjectStyle('surface'); // Force surface style when model is added
+                            setAdStyle('none');
                           }
                         }}
+                        disabled={objectStyle === 'levitating'}
                     />
                     {addModelToFood === 'yes' && (
                         <div className="space-y-4 border border-gray-200 rounded-lg p-3 bg-gray-50">

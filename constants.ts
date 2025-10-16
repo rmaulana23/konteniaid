@@ -1,4 +1,4 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
@@ -19,17 +19,22 @@ export const AESTHETIC_STYLE_OPTIONS: SelectOption<AestheticStyle>[] = [
   { value: 'warm_rustic', label: 'Warm Rustic Style' },
 ];
 
+export const OBJECT_STYLE_OPTIONS: SelectOption<ObjectStyle>[] = [
+    { value: 'surface', label: 'Tidak Melayang (Di Permukaan)' },
+    { value: 'levitating', label: 'Melayang (Levitating)' },
+];
+
 export const VEHICLE_TYPE_OPTIONS: SelectOption<VehicleType>[] = [
     { value: 'mobil', label: 'Mobil' },
     { value: 'motor', label: 'Motor' },
 ];
 
-export const AD_STYLES: SelectOption<AdStyle>[] = [
-  { value: 'none', label: 'Tanpa Gaya (Estetik Saja)' },
-  { value: 'indoor_studio', label: 'Indoor Studio (Melayang)' },
-  { value: 'outdoor_golden_hour', label: 'Outdoor Golden Hour (Melayang)' },
-  { value: 'cinematic_night', label: 'Cinematic Night (Melayang)' },
-  { value: 'lifestyle_natural', label: 'Lifestyle Natural (Melayang)' },
+// Opsi untuk gaya melayang di kategori Makanan & Minuman
+export const LEVITATING_FOOD_AD_STYLES: SelectOption<AdStyle>[] = [
+  { value: 'indoor_studio', label: 'Indoor Studio' },
+  { value: 'outdoor_golden_hour', label: 'Outdoor Golden Hour' },
+  { value: 'cinematic_night', label: 'Cinematic Night' },
+  { value: 'lifestyle_natural', label: 'Lifestyle Natural' },
 ];
 
 // Opsi khusus untuk kategori Fashion & Lifestyle

@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity } from '../types';
+import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle } from '../types';
 
 let ai: GoogleGenAI;
 
@@ -57,7 +57,8 @@ const getPrompt = (
     personMode?: 'full_body' | 'face_only',
     hasCustomModel?: boolean,
     kidsAgeRange?: string,
-    addModelToFood?: 'yes' | 'no'
+    addModelToFood?: 'yes' | 'no',
+    objectStyle?: ObjectStyle
 ): string => {
     let categorySpecificDetails = '';
     let styleText = 'profesional';
@@ -316,8 +317,8 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
             }
         }
         
-        // LOGIKA BARU UNTUK GAYA ESTETIK
-        if (adStyle === 'none') {
+        // LOGIKA BARU BERDASARKAN GAYA OBJEK
+        if (objectStyle === 'surface') {
             switch (aestheticStyle) {
                 case 'cafe_minimalist':
                     styleDetails = "Place the product naturally on a clean, minimalist cafe table. Use soft, bright, natural daylight from a nearby window. The background should be a slightly blurred, aesthetic cafe interior. Add minimal props like a small plant or a cup. The focus is on a clean, bright, and inviting atmosphere.";
@@ -342,7 +343,7 @@ Focus on realistic textures, professional lighting, and a beautiful composition.
 8K resolution, ultra-realistic, hero shot.
 Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deformities, floating product.`;
 
-        } else { // LOGIKA LAMA UNTUK GAYA MELAYANG
+        } else { // LOGIKA UNTUK GAYA MELAYANG
             switch (adStyle) {
                 case 'indoor_studio':
                     styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
@@ -374,7 +375,7 @@ ${colorTonePrompt}
 The final image must look like a real, high-end commercial photograph.
 Focus on realistic textures, cinematic lighting, and a professional composition.
 8K resolution, ultra-realistic, hero shot.
-Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deformities, extra objects overlapping the product, do not place the product on a plate or in another container.`;
+Negative prompt: no watermark, no text, no logos, cartoon, low-res, deformities, extra objects overlapping the product, do not place the product on a plate or in another container.`;
         }
     }
     
@@ -447,7 +448,8 @@ export const generateAdPhotos = async (
   personMode?: 'full_body' | 'face_only',
   customModelFile?: File | null,
   kidsAgeRange?: string,
-  addModelToFood?: 'yes' | 'no'
+  addModelToFood?: 'yes' | 'no',
+  objectStyle?: ObjectStyle
 ): Promise<{ images: string[]; warning: string | null }> => {
   try {
     const genAI = initAi();
@@ -457,7 +459,7 @@ export const generateAdPhotos = async (
       vehicleType, customPrompt, customCarColor, colorTone, spoiler,
       wideBody, rims, hood, allBumper, livery, !!stickerFile,
       !!personImageFile, personMode, !!customModelFile, kidsAgeRange,
-      addModelToFood
+      addModelToFood, objectStyle
     );
 
     // Prepare all image parts once
