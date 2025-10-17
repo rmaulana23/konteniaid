@@ -30,6 +30,8 @@ import {
   PhotoFormat,
   AestheticStyle,
   ObjectStyle,
+  FoodTheme,
+  PosterStyle,
 } from './types';
 
 import {
@@ -38,6 +40,7 @@ import {
   FASHION_AD_STYLES,
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
+  FASHION_MODEL_OPTIONS,
   MODEL_ETHNICITY_OPTIONS,
   AUTOMOTIVE_MODIFICATION_OPTIONS,
   MOTORCYCLE_MODIFICATION_OPTIONS,
@@ -49,6 +52,8 @@ import {
   LIVERY_STYLE_OPTIONS,
   AESTHETIC_STYLE_OPTIONS,
   OBJECT_STYLE_OPTIONS,
+  FOOD_THEME_OPTIONS,
+  POSTER_STYLE_OPTIONS,
 } from './constants';
 
 type Page = 'landing' | 'category' | 'generator' | 'faq';
@@ -192,7 +197,6 @@ const App: React.FC = () => {
   const [variations, setVariations] = useState<number>(1);
   const [modelGender, setModelGender] = useState<ModelGender>('woman');
   const [modelEthnicity, setModelEthnicity] = useState<ModelEthnicity>('indonesian');
-  const [kidsAgeRange, setKidsAgeRange] = useState(''); // New state for kids age range
   const [automotiveModification, setAutomotiveModification] = useState<AutomotiveModification>('none');
   const [carColor, setCarColor] = useState<CarColor>('original');
   const [vehicleType, setVehicleType] = useState<VehicleType>('mobil');
@@ -200,6 +204,14 @@ const App: React.FC = () => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [customCarColor, setCustomCarColor] = useState('');
   const [addModelToFood, setAddModelToFood] = useState<'yes' | 'no'>('no');
+  const [addFoodEffects, setAddFoodEffects] = useState<'yes' | 'no'>('yes');
+  // New state for Food Theme feature
+  const [foodTheme, setFoodTheme] = useState<FoodTheme>('image');
+  const [productName, setProductName] = useState('');
+  const [productSlogan, setProductSlogan] = useState('');
+  const [posterStyle, setPosterStyle] = useState<PosterStyle>('modern_clean');
+  const [socialMediaHandle, setSocialMediaHandle] = useState('');
+
 
   // Custom Automotive Mod State
   const [spoiler, setSpoiler] = useState<'yes' | 'no'>('no');
@@ -249,7 +261,6 @@ const App: React.FC = () => {
     // Reset category-specific states
     setModelGender('woman');
     setModelEthnicity('indonesian');
-    setKidsAgeRange('');
     setAutomotiveModification('none');
     setCarColor('original');
     setVehicleType('mobil');
@@ -270,6 +281,12 @@ const App: React.FC = () => {
     setCustomModelFile(null);
     setCustomModelPreview(null);
     setAddModelToFood('no');
+    setAddFoodEffects('yes');
+    setFoodTheme('image');
+    setProductName('');
+    setProductSlogan('');
+    setPosterStyle('modern_clean');
+    setSocialMediaHandle('');
   };
 
   const handleGoHome = () => {
@@ -296,6 +313,12 @@ const App: React.FC = () => {
     if (category === 'food_beverage') {
         setAdStyle('indoor_studio');
         setObjectStyle('surface');
+        setModelGender('woman');
+        setFoodTheme('image');
+        setPosterStyle('modern_clean');
+    } else if (category === 'fashion_lifestyle') {
+        setAdStyle('indoor_studio');
+        setModelGender('adult_woman');
     } else {
         setAdStyle('indoor_studio'); 
     }
@@ -332,9 +355,7 @@ const App: React.FC = () => {
       setIsAccessCodeModalOpen(false);
       
       if (pendingCategory) {
-        setSelectedCategory(pendingCategory);
-        setAdStyle('indoor_studio');
-        setPage('generator');
+        handleSelectCategory(pendingCategory); // Use the same logic to set defaults
         setPendingCategory(null);
       }
 
@@ -395,6 +416,11 @@ const App: React.FC = () => {
       return;
     }
 
+    if (selectedCategory === 'food_beverage' && foodTheme === 'poster' && (!productName.trim() || !productSlogan.trim())) {
+      setError('Untuk tema Poster, Nama Produk dan Slogan/Promo wajib diisi.');
+      return;
+    }
+
     if (isTrialOver) {
       setIsAccessCodeModalOpen(true);
       return;
@@ -449,9 +475,15 @@ const App: React.FC = () => {
         personImageFile,
         personImageFile ? personMode : undefined,
         (isFashionWithCustomModel || isFoodWithCustomModel) ? customModelFile : null,
-        kidsAgeRange,
         addModelToFood,
-        selectedCategory === 'food_beverage' ? objectStyle : undefined
+        selectedCategory === 'food_beverage' ? objectStyle : undefined,
+        selectedCategory === 'food_beverage' ? addFoodEffects : undefined,
+        undefined, // forceOpenPackage is now handled inside geminiService
+        foodTheme,
+        productName,
+        productSlogan,
+        posterStyle,
+        socialMediaHandle
       );
       setGeneratedImages(result.images);
       if (result.warning) {
@@ -509,7 +541,7 @@ const App: React.FC = () => {
             <button
               onClick={handleGenerateClick}
               disabled={isLoading || !imageFile || isTrialOver}
-              className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? ( <> <Spinner /> {'Membuat Gambar...'} </> ) : 'Generate Foto Iklan' }
             </button>
@@ -517,87 +549,139 @@ const App: React.FC = () => {
 
         return (
           <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
-            <div className="mb-6 text-sm text-gray-500">
+            <div className="mb-4 text-sm text-gray-500">
                 <button onClick={() => setPage('category')} className="hover:text-brand-secondary">Pilih Kategori</button> &gt; <span>{selectedCategoryLabel}</span>
             </div>
-            <div className={`grid grid-cols-1 ${gridColsClass} gap-8 items-start`}>
+            <div className={`grid grid-cols-1 ${gridColsClass} gap-6 items-start`}>
               
-              <div className="lg:col-span-1 space-y-6 bg-white p-6 rounded-lg shadow-md border border-gray-100">
+              <div className="lg:col-span-1 space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-100">
                 <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
                 
                 {selectedCategory === 'food_beverage' && (
                   <>
                     <OptionSelector
-                        title="2. Pilih Gaya Objek"
-                        options={OBJECT_STYLE_OPTIONS}
-                        selectedValue={objectStyle}
-                        onValueChange={(v) => {
-                            const newObjectStyle = v as ObjectStyle;
-                            setObjectStyle(newObjectStyle);
-                            if (newObjectStyle === 'levitating') {
-                                setAddModelToFood('no');
-                            }
-                        }}
+                        title="2. Pilih Jenis Tema"
+                        options={FOOD_THEME_OPTIONS}
+                        selectedValue={foodTheme}
+                        onValueChange={(v) => setFoodTheme(v as FoodTheme)}
                     />
 
-                    <OptionSelector 
-                        title="3. Pilih Gaya Iklan" 
-                        options={LEVITATING_FOOD_AD_STYLES} 
-                        selectedValue={adStyle} 
-                        onValueChange={(v) => setAdStyle(v as AdStyle)}
-                    />
-
-                    <OptionSelector title="4. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
-                    <OptionSelector 
-                        title="5. Tambahkan Model?"
-                        options={YES_NO_OPTIONS}
-                        selectedValue={addModelToFood}
-                        onValueChange={(v) => {
-                          setAddModelToFood(v);
-                          if (v === 'yes') {
-                            setObjectStyle('surface'); // Force surface style when model is added
-                          }
-                        }}
-                        disabled={objectStyle === 'levitating'}
-                    />
-                    {addModelToFood === 'yes' && (
-                        <div className="space-y-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                            <OptionSelector title="Pilih Gender Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
-                            
-                            {modelGender !== 'custom' && (
-                                <OptionSelector title="Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
-                            )}
-
-                            {modelGender === 'kids' && (
-                              <div className="space-y-2">
-                                  <label htmlFor="kids-age-range" className="block text-sm font-semibold text-gray-700">Tentukan Rentang Umur (Opsional)</label>
-                                  <input 
-                                      id="kids-age-range"
-                                      type="text" 
-                                      value={kidsAgeRange}
-                                      onChange={(e) => setKidsAgeRange(e.target.value)}
-                                      placeholder="Contoh: 3-5 tahun"
-                                      className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
-                                  />
-                              </div>
-                            )}
-
-                            {modelGender === 'custom' && (
-                                <div className="space-y-2">
-                                    <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
-                                    <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
-                                    <input 
-                                        type="file" 
-                                        onChange={handleCustomModelUpload}
-                                        accept="image/png, image/jpeg" 
-                                        className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
-                                    />
-                                    {customModelPreview && (
-                                        <img src={customModelPreview} alt="Custom model preview" className="mt-2 h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
-                                    )}
-                                </div>
-                            )}
+                    {foodTheme === 'poster' && (
+                      <div className="space-y-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <h3 className="text-lg font-semibold text-gray-800">3. Isi Detail Poster</h3>
+                        <div className="space-y-2">
+                            <div>
+                              <label htmlFor="product-name" className="block text-sm font-semibold mb-1 text-gray-700">Nama Produk</label>
+                              <input
+                                id="product-name"
+                                type="text"
+                                value={productName}
+                                onChange={(e) => setProductName(e.target.value)}
+                                placeholder="Contoh: Kopi Susu Nikmat"
+                                className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="product-slogan" className="block text-sm font-semibold mb-1 text-gray-700">Slogan / Promo</label>
+                              <input
+                                id="product-slogan"
+                                type="text"
+                                value={productSlogan}
+                                onChange={(e) => setProductSlogan(e.target.value)}
+                                placeholder="Contoh: Beli 1 Gratis 1"
+                                className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label htmlFor="social-media" className="block text-sm font-semibold mb-1 text-gray-700">Social Media (Opsional)</label>
+                              <input
+                                id="social-media"
+                                type="text"
+                                value={socialMediaHandle}
+                                onChange={(e) => setSocialMediaHandle(e.target.value)}
+                                placeholder="Contoh: @konteniaid"
+                                className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
+                              />
+                            </div>
+                             <OptionSelector
+                                title="Gaya Poster"
+                                options={POSTER_STYLE_OPTIONS}
+                                selectedValue={posterStyle}
+                                onValueChange={(v) => setPosterStyle(v as PosterStyle)}
+                            />
                         </div>
+                      </div>
+                    )}
+
+                    {foodTheme === 'image' && (
+                      <>
+                        <OptionSelector
+                            title="3. Pilih Gaya Objek"
+                            options={OBJECT_STYLE_OPTIONS}
+                            selectedValue={objectStyle}
+                            onValueChange={(v) => {
+                                const newObjectStyle = v as ObjectStyle;
+                                setObjectStyle(newObjectStyle);
+                                if (newObjectStyle === 'levitating') {
+                                    setAddModelToFood('no');
+                                }
+                            }}
+                        />
+
+                        <OptionSelector 
+                            title="4. Pilih Gaya Iklan"
+                            options={LEVITATING_FOOD_AD_STYLES} 
+                            selectedValue={adStyle} 
+                            onValueChange={(v) => setAdStyle(v as AdStyle)}
+                        />
+                        
+                        <OptionSelector 
+                            title="5. Tambahkan Efek?"
+                            options={YES_NO_OPTIONS}
+                            selectedValue={addFoodEffects}
+                            onValueChange={(v) => setAddFoodEffects(v)}
+                        />
+
+                        <OptionSelector 
+                            title="6. Tambahkan Model?"
+                            options={YES_NO_OPTIONS}
+                            selectedValue={addModelToFood}
+                            onValueChange={(v) => {
+                              setAddModelToFood(v);
+                              if (v === 'yes') {
+                                setObjectStyle('surface'); // Force surface style when model is added
+                              }
+                            }}
+                            disabled={objectStyle === 'levitating'}
+                        />
+                        {addModelToFood === 'yes' && (
+                            <div className="space-y-3 border border-gray-200 rounded-lg p-2 bg-gray-50">
+                                <OptionSelector title="Pilih Gender Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                                
+                                {modelGender !== 'custom' && (
+                                    <OptionSelector title="Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
+                                )}
+
+                                {modelGender === 'custom' && (
+                                    <div className="space-y-1">
+                                        <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
+                                        <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
+                                        <input 
+                                            type="file" 
+                                            onChange={handleCustomModelUpload}
+                                            accept="image/png, image/jpeg" 
+                                            className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
+                                        />
+                                        {customModelPreview && (
+                                            <img src={customModelPreview} alt="Custom model preview" className="mt-2 h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -605,28 +689,14 @@ const App: React.FC = () => {
                 {selectedCategory === 'fashion_lifestyle' && (
                   <>
                     <OptionSelector title="2. Pilih Gaya Iklan" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
-                    <OptionSelector title="3. Pilih Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                    <OptionSelector title="3. Pilih Model" options={FASHION_MODEL_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
                     
                     {modelGender !== 'custom' && (
                         <OptionSelector title="4. Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
                     )}
 
-                    {modelGender === 'kids' && (
-                      <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
-                          <label htmlFor="kids-age-range" className="block text-sm font-semibold text-gray-700">Tentukan Rentang Umur (Opsional)</label>
-                          <input 
-                              id="kids-age-range"
-                              type="text" 
-                              value={kidsAgeRange}
-                              onChange={(e) => setKidsAgeRange(e.target.value)}
-                              placeholder="Contoh: 3-5 tahun"
-                              className="w-full text-sm appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50"
-                          />
-                      </div>
-                    )}
-
                     {modelGender === 'custom' && (
-                        <div className="space-y-2 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="space-y-1 border border-gray-200 rounded-lg p-2 bg-gray-50">
                             <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
                             <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
                             <input 
@@ -648,28 +718,28 @@ const App: React.FC = () => {
                 )}
 
                 <OptionSelector
-                    title={selectedCategory === 'food_beverage' ? "6. Jumlah Hasil Variasi" : (selectedCategory === 'fashion_lifestyle' ? "5. Jumlah Hasil Variasi" : "5. Jumlah Hasil Variasi")}
+                    title="Jumlah Hasil Variasi"
                     options={VARIATION_OPTIONS}
                     selectedValue={variations}
                     onValueChange={(v) => setVariations(v)}
                 />
                 
                 <div>
-                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-2 text-gray-800">{selectedCategory === 'food_beverage' ? "7. Kustomisasi (Opsional)" : (selectedCategory === 'fashion_lifestyle' ? "6. Kustomisasi (Opsional)" : "6. Kustomisasi (Opsional)")}</label>
+                  <label htmlFor="custom-prompt" className="block text-lg font-semibold mb-1 text-gray-800">Kustomisasi (Opsional)</label>
                   <textarea
                     id="custom-prompt"
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     placeholder="Contoh: tambahkan efek tertentu"
                     className="w-full appearance-none bg-white border border-gray-300 text-gray-900 py-2 px-3 rounded-lg leading-tight focus:outline-none focus:bg-gray-50 focus:border-brand-secondary focus:ring-2 focus:ring-brand-secondary/50 transition-colors"
-                    rows={3}
+                    rows={2}
                   />
                 </div>
                 
                 {selectedCategory !== 'automotive' && GenerateButton}
               </div>
 
-              <div className={`${resultsColSpanClass} space-y-8 ${selectedCategory === 'automotive' ? 'order-last lg:order-none' : ''}`}>
+              <div className={`${resultsColSpanClass} space-y-6 ${selectedCategory === 'automotive' ? 'order-last lg:order-none' : ''}`}>
                  {error && (
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
                         <p className="font-bold">Terjadi Kesalahan</p>
@@ -705,13 +775,13 @@ const App: React.FC = () => {
               </div>
 
               {selectedCategory === 'automotive' && (
-                 <div className="lg:col-span-1 space-y-6 bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                 <div className="lg:col-span-1 space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-100">
                     <h3 className="text-xl font-bold text-gray-900 border-b pb-2">Opsi Spesifik Otomotif</h3>
                     <OptionSelector title="Pilih Tipe Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v)} />
                     <OptionSelector title="Pilih Modifikasi" options={vehicleType === 'mobil' ? AUTOMOTIVE_MODIFICATION_OPTIONS : MOTORCYCLE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v)} />
                     
                     {automotiveModification === 'custom' && vehicleType === 'mobil' && (
-                        <div className="space-y-4 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <div className="space-y-3 border border-gray-200 rounded-lg p-2 bg-gray-50">
                             <OptionSelector title="Bumper & Sideskirt" options={YES_NO_OPTIONS} selectedValue={allBumper} onValueChange={(v) => setAllBumper(v)} />
                             <OptionSelector title="Spoiler Belakang" options={YES_NO_OPTIONS} selectedValue={spoiler} onValueChange={(v) => setSpoiler(v)} />
                             <OptionSelector title="Widebody" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v)} />
@@ -719,7 +789,7 @@ const App: React.FC = () => {
                             <OptionSelector title="Kap Mesin Custom" options={YES_NO_OPTIONS} selectedValue={hood} onValueChange={(v) => setHood(v)} />
                             <OptionSelector title="Gaya Livery" options={LIVERY_STYLE_OPTIONS} selectedValue={livery} onValueChange={(v) => setLivery(v)} />
                             <div>
-                                <label className="block text-sm font-semibold mb-2 text-gray-700">Upload Stiker/Logo (Opsional)</label>
+                                <label className="block text-sm font-semibold mb-1 text-gray-700">Upload Stiker/Logo (Opsional)</label>
                                 <input type="file" onChange={handleStickerUpload} accept="image/png, image/jpeg" className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100"/>
                                 {stickerPreview && <img src={stickerPreview} alt="sticker preview" className="mt-2 h-12 w-auto object-contain rounded-sm"/>}
                             </div>
@@ -750,7 +820,7 @@ const App: React.FC = () => {
                             className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
                         />
                         {personImagePreview && (
-                            <div className="mt-4 space-y-3">
+                            <div className="mt-4 space-y-2">
                                 <img src={personImagePreview} alt="Person preview" className="h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
                                 <OptionSelector 
                                     title="Pilih Tipe Foto"

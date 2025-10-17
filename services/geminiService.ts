@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle } from '../types';
+import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle } from '../types';
 
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
@@ -43,9 +43,15 @@ const getPrompt = (
     hasPerson?: boolean,
     personMode?: 'full_body' | 'face_only',
     hasCustomModel?: boolean,
-    kidsAgeRange?: string,
     addModelToFood?: 'yes' | 'no',
-    objectStyle?: ObjectStyle
+    objectStyle?: ObjectStyle,
+    addFoodEffects?: 'yes' | 'no',
+    forceOpenPackage?: boolean,
+    foodTheme?: FoodTheme,
+    productName?: string,
+    productSlogan?: string,
+    posterStyle?: PosterStyle,
+    socialMediaHandle?: string
 ): string => {
     let categorySpecificDetails = '';
     let styleText = 'profesional';
@@ -93,17 +99,17 @@ const getPrompt = (
 
             let genderText = '';
             switch (modelGender) {
-                case 'man':
-                    genderText = 'male model';
+                case 'adult_woman':
+                    genderText = 'adult female model';
                     break;
-                case 'woman':
-                    genderText = 'female model';
+                case 'adult_man':
+                    genderText = 'adult male model';
                     break;
-                case 'kids':
-                    const ageText = kidsAgeRange && kidsAgeRange.trim() !== '' 
-                        ? `age around ${kidsAgeRange.trim()}` 
-                        : 'age around 6-10 years old';
-                    genderText = `child model (boy or girl, ${ageText}, looking happy and natural)`;
+                case 'child_woman':
+                    genderText = 'female child model (girl, age around 8-12, looking happy and natural)';
+                    break;
+                case 'child_man':
+                    genderText = 'male child model (boy, age around 8-12, looking happy and natural)';
                     break;
                 default:
                     genderText = 'female model'; // Fallback
@@ -262,96 +268,174 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
 
     // Logika fallback untuk Makanan & Minuman
     else {
-        let styleDetails = '';
-        let presentationInstruction = `Product Presentation Rules: The uploaded product is the hero. If the product is in a snack bag or similar packaging, you have the creative freedom to open it to reveal the contents. However, for sealed products like bottles or cans, you MUST keep the packaging professional and closed. Enhance it with condensation or splashes instead. The AI should intelligently decide if opening the package is appropriate for the specific product to make it look its best.`;
+        if (category === 'food_beverage' && foodTheme === 'poster') {
+            styleText = 'Poster Promosi';
+            let posterStyleDetails = '';
 
-        let modelPrompt = '';
-        if (addModelToFood === 'yes') {
-            if (modelGender === 'custom' && hasCustomModel) {
-                modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene. The model should be interacting with the food product in a natural, appealing way (e.g., holding it, about to eat it, presenting it with a smile). The uploaded food product must be the main focus, positioned believably with the model. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable food advertisement.`;
+            const defaultStyle = `
+- Layout & Style:
+  - The overall design MUST be clean, modern, and minimalistic.
+  - Use a simple, elegant color palette (e.g., pastel tones or a monochrome scheme) that complements the product.
+  - Typography: Use a bold, clean, sans-serif font for the headline ("${productName}") and a lighter weight of the same font for the slogan ("${productSlogan}").
+  - The layout must be vertical (9:16 aspect ratio), with ample negative space to create a sophisticated feel.
+  - Add simple geometric shapes or lines in the background to enhance the modern aesthetic.
+  - Include placeholder elements: a small area for a logo (top right).
+  - Add a simple, solid-colored call-to-action button like 'ORDER NOW' at the bottom.`;
+
+            switch (posterStyle) {
+                case 'modern_clean':
+                    posterStyleDetails = defaultStyle;
+                    break;
+                case 'bold_energetic':
+                    posterStyleDetails = `
+- Layout & Style:
+  - The design must be bold, dynamic, and energetic, aimed at grabbing attention.
+  - Use a vibrant, high-contrast color palette with bright colors.
+  - Typography: Use a very bold, impactful, and playful font for the headline ("${productName}"). For the slogan ("${productSlogan}"), use a contrasting handwritten or brush-style font.
+  - Incorporate dynamic background elements like abstract shapes, sunburst patterns, or paint splatters.
+  - The layout must be vertical (9:16 aspect ratio) and feel very active and full, but not cluttered.
+  - Include placeholder elements: a small area for a logo.
+  - The call-to-action button ('ORDER NOW') must be large, bright, and impossible to miss.`;
+                    break;
+                case 'elegant_premium':
+                    posterStyleDetails = `
+- Layout & Style:
+  - The aesthetic must be elegant, luxurious, and premium.
+  - Use a dark, moody color palette (e.g., deep blues, blacks, maroons) with metallic accents (gold, silver, or bronze).
+  - Typography: Use a sophisticated serif or a classy script font for the headline ("${productName}"). The slogan ("${productSlogan}") should be in a clean, light sans-serif font for contrast.
+  - The background should be subtly textured, like dark marble, rich wood, or a soft-focused luxury setting.
+  - Add subtle lighting effects like a soft spotlight on the product or a gentle glow behind it.
+  - The layout must be vertical (9:16 aspect ratio), clean, and centered, conveying a sense of quality and prestige.
+  - Include minimalist placeholder elements: a small, elegant logo area.
+  - The call-to-action button ('ORDER NOW') should be understated but elegant, perhaps with a metallic border.`;
+                    break;
+                default:
+                    posterStyleDetails = defaultStyle;
+                    break;
+            }
+
+            let socialMediaInstruction = '';
+            if (socialMediaHandle && socialMediaHandle.trim() !== '') {
+                // Remove "@" if user types it, as we add it in the prompt.
+                const handle = socialMediaHandle.trim().replace(/^@/, '');
+                socialMediaInstruction = `
+- Social Media Element (CRITICAL):
+  - At the bottom of the poster, you MUST include a small, universally recognizable Instagram logo icon.
+  - Next to the Instagram icon, display this exact text: "@${handle}".
+  - Ensure this element is clean, legible, and placed tastefully in a corner (e.g., bottom left), matching the overall poster style. Do NOT add any other social media icons.`;
+            }
+
+
+            categorySpecificDetails = `Create a vibrant promotional poster for "${productName}" using the uploaded product image as the main visual.
+            
+- Main Visual:
+  - The uploaded product image MUST be the hero element, perfectly cut out and placed centrally.
+  - Surround the product with dynamic, photorealistic effects that match the product (e.g., liquid splashes, flying ingredients, steam). The effects should complement the chosen style.
+
+- Text Elements (CRITICAL):
+  - At the top, display the headline: "${productName}".
+  - Below the headline, add the main promotional tagline: "${productSlogan}".
+  - All text must be clearly legible, well-integrated, and have a professional design quality that matches the chosen style.
+
+${posterStyleDetails}
+
+${socialMediaInstruction}
+
+- Quality Keywords:
+  - Modern 3D render, C4D style, commercial poster, hyper-realistic, professional ad layout, modern food photography, clean composition.
+  
+- Negative Prompt:
+  - no watermark, no blurry text, no distorted product, do not change the product from the uploaded image, no messy layout, no generic stock photo elements, no other social media icons except Instagram if requested.`;
+
+        } else { // Logic for 'image' theme (existing logic)
+            let styleDetails = '';
+            let presentationInstruction = '';
+
+            if (forceOpenPackage) {
+                presentationInstruction = `Product Presentation Rules: CRITICAL INSTRUCTION - For this image, you MUST open the product's packaging to reveal the contents inside. For example, if it's a snack bag, show the bag torn open with the chips attractively spilling out onto the surface. If it's a box of cookies, show the box open with a few cookies visible or placed next to it. The goal is a dynamic, appealing shot that shows the actual product.`;
             } else {
-                let ethnicityText = '';
-                if (modelGender !== 'custom' && modelEthnicity) {
-                    switch(modelEthnicity) {
-                        case 'indonesian': ethnicityText = 'an Indonesian (Southeast Asian)'; break;
-                        case 'caucasian': ethnicityText = 'a Caucasian'; break;
+                presentationInstruction = `Product Presentation Rules: CRITICAL INSTRUCTION - For this image, the product packaging MUST remain closed and sealed. Present it in a clean, professional, and heroic manner. Do NOT open the package. You can enhance it with effects like water condensation for drinks or place it on an elegant surface, but the packaging itself must be intact.`;
+            }
+
+            let modelPrompt = '';
+            if (addModelToFood === 'yes') {
+                if (modelGender === 'custom' && hasCustomModel) {
+                    modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene. The model should be interacting with the food product in a natural, appealing way (e.g., holding it, about to eat it, presenting it with a smile). The uploaded food product must be the main focus, positioned believably with the model. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable food advertisement.`;
+                } else {
+                    let ethnicityText = '';
+                    if (modelGender !== 'custom' && modelEthnicity) {
+                        switch(modelEthnicity) {
+                            case 'indonesian': ethnicityText = 'an Indonesian (Southeast Asian)'; break;
+                            case 'caucasian': ethnicityText = 'a Caucasian'; break;
+                        }
                     }
+                    let genderText = '';
+                    switch (modelGender) {
+                        case 'man': genderText = 'male model'; break;
+                        case 'woman': genderText = 'female model'; break;
+                        case 'kids':
+                            genderText = `child model (boy or girl, age around 6-10 years old, looking happy and natural)`;
+                            break;
+                        default: genderText = 'female model'; // Fallback
+                    }
+                    const fullModelDescription = `${ethnicityText} ${genderText}`.trim();
+                    modelPrompt = `Incorporate a photorealistic, stylish ${fullModelDescription} into the scene. The model should be interacting naturally and appealingly with the food product, as if endorsing it in a high-end advertisement. Examples of interaction: holding the product elegantly, smiling while about to take a bite, or presenting it towards the camera. The model should enhance the product, not distract from it. The food product must remain the primary focus.`;
                 }
-                let genderText = '';
-                switch (modelGender) {
-                    case 'man': genderText = 'male model'; break;
-                    case 'woman': genderText = 'female model'; break;
-                    case 'kids':
-                        const ageText = kidsAgeRange && kidsAgeRange.trim() !== '' ? `age around ${kidsAgeRange.trim()}` : 'age around 6-10 years old';
-                        genderText = `child model (boy or girl, ${ageText}, looking happy and natural)`;
-                        break;
-                    default: genderText = 'female model'; // Fallback
-                }
-                const fullModelDescription = `${ethnicityText} ${genderText}`.trim();
-                modelPrompt = `Incorporate a photorealistic, stylish ${fullModelDescription} into the scene. The model should be interacting naturally and appealingly with the food product, as if endorsing it in a high-end advertisement. Examples of interaction: holding the product elegantly, smiling while about to take a bite, or presenting it towards the camera. The model should enhance the product, not distract from it. The food product must remain the primary focus.`;
             }
-        }
-
-        let colorTonePrompt = '';
-        if (colorTone && colorTone !== 'natural') {
-            switch (colorTone) {
-                case 'warm':
-                    colorTonePrompt = "The entire image must have a warm color tone, using soft golden light to create a cozy and inviting atmosphere.";
+            
+            // UNIFIED LOGIC FOR FOOD STYLES
+            switch (adStyle) {
+                case 'indoor_studio':
+                    styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
+                    styleText = 'Studio Profesional';
                     break;
-                case 'cool':
-                    colorTonePrompt = "The entire image must have a cool color tone, using crisp, slightly blueish light to emphasize freshness and a clean, modern aesthetic.";
+                case 'outdoor_golden_hour':
+                    styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
+                    styleText = 'Outdoor Golden Hour';
+                    break;
+                case 'cinematic_night':
+                    styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
+                    styleText = 'Sinematik Malam Hari';
+                    break;
+                case 'lifestyle_natural':
+                    styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
+                    styleText = 'Gaya Hidup Natural';
+                    break;
+                default:
+                    // Fallback for 'none' or other cases, defaulting to a clean studio.
+                    styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
+                    styleText = 'Studio Profesional';
                     break;
             }
-        }
-        
-        // UNIFIED LOGIC FOR FOOD STYLES
-        switch (adStyle) {
-            case 'indoor_studio':
-                styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
-                styleText = 'Studio Profesional';
-                break;
-            case 'outdoor_golden_hour':
-                styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
-                styleText = 'Outdoor Golden Hour';
-                break;
-            case 'cinematic_night':
-                styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
-                styleText = 'Sinematik Malam Hari';
-                break;
-            case 'lifestyle_natural':
-                styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
-                styleText = 'Gaya Hidup Natural';
-                break;
-            default:
-                // Fallback for 'none' or other cases, defaulting to a clean studio.
-                styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
-                styleText = 'Studio Profesional';
-                break;
-        }
 
-        let placementInstruction = '';
-        let negativePromptExtras = '';
+            let placementInstruction = '';
+            let negativePromptExtras = '';
 
-        if (objectStyle === 'surface') {
-            placementInstruction = `The product should be presented aesthetically on a relevant surface (like a table, counter, or stand) that fits the scene. It must NOT be floating.`;
-            negativePromptExtras = ', floating product';
-        } else { // levitating
-            const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
-            placementInstruction = `Make the product levitate elegantly in the center.
-Surround the levitating product with its key ingredients or related elements, also floating dynamically.
-${dynamicEffects}`;
-            negativePromptExtras = ', do not place the product on a plate or in another container';
-        }
-        
-        categorySpecificDetails = `${presentationInstruction}
+            if (objectStyle === 'surface') {
+                placementInstruction = `Product Placement: The product must be presented aesthetically on a relevant surface (like a table, counter, or stand) that fits the scene. It must NOT be floating.`;
+                negativePromptExtras = ', floating product';
+            } else { // levitating
+                placementInstruction = `Product Placement: Make the product levitate elegantly in the center of the frame.`;
+                negativePromptExtras = ', do not place the product on a plate or in another container';
+            }
+            
+            let effectsInstruction = '';
+            if (addFoodEffects === 'yes') {
+                effectsInstruction = `Dynamic Effects: To make the image more dynamic and appealing, add professional photorealistic effects. For hot food, add subtle steam. For beverages, add realistic condensation or a dynamic liquid splash. For other products, add complementary ingredients (like fruit pieces, chocolate chunks, etc.) floating or scattered artfully around the main product.`;
+            } else {
+                effectsInstruction = `Dynamic Effects: The presentation must be clean, simple, and static. Do NOT add any extra dynamic elements like splashes, floating ingredients, or artificial steam.`;
+            }
+
+            categorySpecificDetails = `${presentationInstruction}
 ${modelPrompt}
 ${placementInstruction}
+${effectsInstruction}
 The scene style is: ${styleDetails}
-${colorTonePrompt}
 The final image must look like a real, high-end commercial photograph.
 Focus on realistic textures, professional lighting, and a beautiful composition.
 8K resolution, ultra-realistic, hero shot.
 Negative prompt: no watermark, no text, no logos, cartoon, low-res, deformities${negativePromptExtras}.`;
+        }
     }
     
     // START OF FIX: Restructure prompt to be more forceful about aspect ratio
@@ -384,7 +468,7 @@ DETAIL PERMINTAAN GAMBAR:
 1. **Objek Utama**: Gunakan gambar produk yang di-upload. JANGAN mengubah produk itu sendiri, tetapi tempatkan secara realistis ke dalam adegan baru.
 2. **Gaya & Suasana**:
    - Gaya Iklan: ${styleText}
-   - Tone Warna: ${toneText}
+   ${category !== 'food_beverage' ? `- Tone Warna: ${toneText}` : ''}
 3. **Detail Adegan Spesifik Kategori**:
    - ${categorySpecificDetails}
 ${customPrompt && customPrompt.trim() !== '' ? `4. **Instruksi Tambahan dari Pengguna**:\n   - ${customPrompt.trim()}` : ''}
@@ -422,9 +506,15 @@ export const generateAdPhotos = async (
   personImageFile?: File | null,
   personMode?: 'full_body' | 'face_only',
   customModelFile?: File | null,
-  kidsAgeRange?: string,
   addModelToFood?: 'yes' | 'no',
-  objectStyle?: ObjectStyle
+  objectStyle?: ObjectStyle,
+  addFoodEffects?: 'yes' | 'no',
+  forceOpenPackage?: boolean, // This can be removed or kept for other potential uses
+  foodTheme?: FoodTheme,
+  productName?: string,
+  productSlogan?: string,
+  posterStyle?: PosterStyle,
+  socialMediaHandle?: string
 ): Promise<{ images: string[]; warning: string | null }> => {
   try {
     if (!process.env.API_KEY) {
@@ -432,36 +522,41 @@ export const generateAdPhotos = async (
     }
     const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-    const textPrompt = getPrompt(
-      category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, automotiveModification, carColor,
-      vehicleType, customPrompt, customCarColor, colorTone, spoiler,
-      wideBody, rims, hood, allBumper, livery, !!stickerFile,
-      !!personImageFile, personMode, !!customModelFile, kidsAgeRange,
-      addModelToFood, objectStyle
-    );
-
     // Prepare all image parts once
     const imagePart = await fileToGenerativePart(imageFile);
-    const imageParts = [imagePart];
+    const staticImageParts = [imagePart];
 
     if (stickerFile) {
       const stickerImagePart = await fileToGenerativePart(stickerFile);
-      imageParts.push(stickerImagePart);
+      staticImageParts.push(stickerImagePart);
     }
     if (personImageFile) {
       const personImagePart = await fileToGenerativePart(personImageFile);
-      imageParts.push(personImagePart);
+      staticImageParts.push(personImagePart);
     }
     if (customModelFile) {
       const customModelPart = await fileToGenerativePart(customModelFile);
-      imageParts.push(customModelPart);
+      staticImageParts.push(customModelPart);
     }
+    
+    // Create an array of promises, each with a potentially different prompt
+    const generationPromises = Array.from({ length: variations }, (_, i) => {
+      // For the food category, if more than one variation is requested,
+      // and it's an 'image' theme, force the first one to have an open package.
+      const shouldForceOpenPackage = category === 'food_beverage' && foodTheme === 'image' && variations > 1 && i === 0;
 
-    const contentParts = [...imageParts, { text: textPrompt }];
+      const textPrompt = getPrompt(
+        category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, automotiveModification, carColor,
+        vehicleType, customPrompt, customCarColor, colorTone, spoiler,
+        wideBody, rims, hood, allBumper, livery, !!stickerFile,
+        !!personImageFile, personMode, !!customModelFile,
+        addModelToFood, objectStyle, addFoodEffects, shouldForceOpenPackage,
+        foodTheme, productName, productSlogan, posterStyle, socialMediaHandle
+      );
 
-    // Create an array of promises to run image generation in parallel
-    const generationPromises = Array.from({ length: variations }, () =>
-      genAI.models.generateContent({
+      const contentParts = [...staticImageParts, { text: textPrompt }];
+      
+      return genAI.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {
           parts: contentParts,
@@ -471,8 +566,8 @@ export const generateAdPhotos = async (
           // Add a random seed to ensure each generation is unique
           seed: Math.floor(Math.random() * 1000000),
         },
-      })
-    );
+      });
+    });
     
     const responses = await Promise.all(generationPromises);
 

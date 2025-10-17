@@ -35,9 +35,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, uploadedIm
 
   return (
     <div className="w-full">
-      <h3 className="text-lg font-semibold mb-2 text-gray-800">1. Upload Foto Produk</h3>
+      <h3 className="text-lg font-semibold mb-1 text-gray-800">1. Upload Foto Produk</h3>
       <div
-        className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-brand-secondary transition-colors duration-300 bg-white"
+        className="relative border-2 border-dashed border-gray-300 rounded-lg p-3 text-center cursor-pointer hover:border-brand-secondary transition-colors duration-300 bg-white"
         onClick={handleClick}
         onDrop={handleDrop}
         onDragOver={handleDragOver}

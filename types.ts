@@ -8,7 +8,7 @@ export type AestheticStyle = 'cafe_minimalist' | 'dramatic_spotlight' | 'warm_ru
 
 export type ObjectStyle = 'surface' | 'levitating';
 
-export type ModelGender = 'woman' | 'man' | 'kids' | 'custom';
+export type ModelGender = 'woman' | 'man' | 'kids' | 'custom' | 'adult_woman' | 'adult_man' | 'child_woman' | 'child_man';
 
 export type ModelEthnicity = 'indonesian' | 'caucasian';
 
@@ -21,6 +21,10 @@ export type LiveryStyle = 'none' | 'racing_team' | 'drift_style' | 'retro_feel';
 export type CarColor = 'original' | 'metallic_black' | 'pearl_white' | 'candy_red' | 'gunmetal_gray' | 'electric_blue' | 'custom';
 
 export type ColorTone = 'natural' | 'warm' | 'cool';
+
+export type FoodTheme = 'image' | 'poster';
+
+export type PosterStyle = 'modern_clean' | 'bold_energetic' | 'elegant_premium';
 
 export interface SelectOption<T extends string | number> {
   value: T;

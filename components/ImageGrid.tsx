@@ -38,8 +38,8 @@ const ImageGrid: React.FC<ImageGridProps> = ({ images }) => {
   return (
     <>
       <div className="w-full">
-        <h2 className="text-2xl font-bold mb-2 text-gray-900">Hasil Foto Iklan</h2>
-        <p className="text-gray-600 mb-3">Klik gambar untuk melihat versi besar.</p>
+        <h2 className="text-2xl font-bold mb-1 text-gray-900">Hasil Foto Iklan</h2>
+        <p className="text-gray-600 mb-2">Klik gambar untuk melihat versi besar.</p>
         <div className={`grid grid-cols-1 md:grid-cols-2 ${images.length > 2 ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} gap-4`}>
           {images.map((image, index) => (
             <div 

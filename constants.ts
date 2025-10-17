@@ -1,4 +1,4 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
@@ -27,6 +27,17 @@ export const OBJECT_STYLE_OPTIONS: SelectOption<ObjectStyle>[] = [
 export const VEHICLE_TYPE_OPTIONS: SelectOption<VehicleType>[] = [
     { value: 'mobil', label: 'Mobil' },
     { value: 'motor', label: 'Motor' },
+];
+
+export const FOOD_THEME_OPTIONS: SelectOption<FoodTheme>[] = [
+  { value: 'image', label: 'Konten Gambar' },
+  { value: 'poster', label: 'Poster Promosi' },
+];
+
+export const POSTER_STYLE_OPTIONS: SelectOption<PosterStyle>[] = [
+  { value: 'modern_clean', label: 'Modern & Bersih' },
+  { value: 'bold_energetic', label: 'Tebal & Berenergi' },
+  { value: 'elegant_premium', label: 'Elegan & Premium' },
 ];
 
 // Opsi untuk gaya melayang di kategori Makanan & Minuman
@@ -95,6 +106,14 @@ export const MODEL_GENDER_OPTIONS: SelectOption<ModelGender>[] = [
     { value: 'woman', label: 'Woman' },
     { value: 'man', label: 'Men' },
     { value: 'kids', label: 'Kids' },
+    { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
+];
+
+export const FASHION_MODEL_OPTIONS: SelectOption<ModelGender>[] = [
+    { value: 'adult_woman', label: 'Wanita Dewasa' },
+    { value: 'adult_man', label: 'Pria Dewasa' },
+    { value: 'child_woman', label: 'Anak Perempuan' },
+    { value: 'child_man', label: 'Anak Laki-laki' },
     { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
 ];
 
