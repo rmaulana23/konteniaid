@@ -1,4 +1,4 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle, SocialMediaPlatform } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
@@ -10,7 +10,6 @@ export const PHOTO_FORMAT_OPTIONS: SelectOption<PhotoFormat>[] = [
   { value: '1:1', label: '1:1 (Square)' },
   { value: '4:5', label: '4:5 (Portrait)' },
   { value: '9:16', label: '9:16 (Full Vertical)' },
-  { value: '16:9', label: '16:9 (Landscape)' },
 ];
 
 export const AESTHETIC_STYLE_OPTIONS: SelectOption<AestheticStyle>[] = [
@@ -38,6 +37,14 @@ export const POSTER_STYLE_OPTIONS: SelectOption<PosterStyle>[] = [
   { value: 'modern_clean', label: 'Modern & Bersih' },
   { value: 'bold_energetic', label: 'Tebal & Berenergi' },
   { value: 'elegant_premium', label: 'Elegan & Premium' },
+];
+
+export const SOCIAL_MEDIA_PLATFORM_OPTIONS: SelectOption<SocialMediaPlatform>[] = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'x_twitter', label: 'X (Twitter)' },
 ];
 
 // Opsi untuk gaya melayang di kategori Makanan & Minuman

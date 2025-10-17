@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 interface HeaderProps {
   onGoHome: () => void;
   onGoToFAQ: () => void;
+  onGoToAbout: () => void;
   onOpenTerms: () => void;
   onOpenPrivacy: () => void;
   onGetAccess: () => void;
@@ -27,7 +28,7 @@ const CloseIcon = () => (
 );
 
 
-const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpenPrivacy, onGetAccess, isTrialOver, hasAccessCode }) => {
+const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onGoToAbout, onOpenTerms, onOpenPrivacy, onGetAccess, isTrialOver, hasAccessCode }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -50,6 +51,13 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
                 aria-label="Buka halaman FAQ"
               >
                 FAQ
+              </button>
+              <button
+                onClick={onGoToAbout}
+                className="hidden sm:flex items-center gap-2 text-white/90 hover:text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                aria-label="Buka halaman Tentang Kami"
+              >
+                Tentang
               </button>
               
               {!hasAccessCode && (
@@ -86,6 +94,10 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onOpenTerms, onOpe
                           onClick={() => { onGoToFAQ(); setIsMobileMenuOpen(false); }}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                       >FAQ</a>
+                      <a
+                          onClick={() => { onGoToAbout(); setIsMobileMenuOpen(false); }}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      >Tentang</a>
                       <a
                           onClick={() => { onOpenTerms(); setIsMobileMenuOpen(false); }}
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"

@@ -1,6 +1,6 @@
 export type ProductCategory = 'food_beverage' | 'fashion_lifestyle' | 'automotive';
 
-export type PhotoFormat = '1:1' | '4:5' | '9:16' | '16:9';
+export type PhotoFormat = '1:1' | '4:5' | '9:16';
 
 export type AdStyle = 'none' | 'indoor_studio' | 'outdoor_golden_hour' | 'cinematic_night' | 'lifestyle_natural' | 'japanese_drifting' | 'city_street' | 'professional_kitchen';
 
@@ -25,6 +25,14 @@ export type ColorTone = 'natural' | 'warm' | 'cool';
 export type FoodTheme = 'image' | 'poster';
 
 export type PosterStyle = 'modern_clean' | 'bold_energetic' | 'elegant_premium';
+
+export type SocialMediaPlatform = 'instagram' | 'tiktok' | 'facebook' | 'youtube' | 'x_twitter';
+
+export interface SocialMediaEntry {
+  id: number;
+  platform: SocialMediaPlatform;
+  handle: string;
+}
 
 export interface SelectOption<T extends string | number> {
   value: T;
