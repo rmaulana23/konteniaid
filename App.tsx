@@ -294,7 +294,7 @@ const App: React.FC = () => {
     setSelectedCategory(category);
     // Set default style for the selected category
     if (category === 'food_beverage') {
-        setAdStyle('none');
+        setAdStyle('indoor_studio');
         setObjectStyle('surface');
     } else {
         setAdStyle('indoor_studio'); 
@@ -535,31 +535,17 @@ const App: React.FC = () => {
                             const newObjectStyle = v as ObjectStyle;
                             setObjectStyle(newObjectStyle);
                             if (newObjectStyle === 'levitating') {
-                                setAdStyle('indoor_studio');
                                 setAddModelToFood('no');
-                            } else { // surface
-                                setAdStyle('none');
                             }
                         }}
                     />
 
-                    {objectStyle === 'surface' && (
-                      <OptionSelector 
-                        title="3. Pilih Gaya Foto" 
-                        options={AESTHETIC_STYLE_OPTIONS} 
-                        selectedValue={aestheticStyle} 
-                        onValueChange={(v) => setAestheticStyle(v as AestheticStyle)}
-                      />
-                    )}
-
-                    {objectStyle === 'levitating' && (
-                      <OptionSelector 
+                    <OptionSelector 
                         title="3. Pilih Gaya Iklan" 
                         options={LEVITATING_FOOD_AD_STYLES} 
                         selectedValue={adStyle} 
                         onValueChange={(v) => setAdStyle(v as AdStyle)}
-                      />
-                    )}
+                    />
 
                     <OptionSelector title="4. Pilih Tone Warna" options={COLOR_TONE_OPTIONS} selectedValue={colorTone} onValueChange={(v) => setColorTone(v)} />
                     <OptionSelector 
@@ -570,7 +556,6 @@ const App: React.FC = () => {
                           setAddModelToFood(v);
                           if (v === 'yes') {
                             setObjectStyle('surface'); // Force surface style when model is added
-                            setAdStyle('none');
                           }
                         }}
                         disabled={objectStyle === 'levitating'}

@@ -1,19 +1,6 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle } from '../types';
 
-let ai: GoogleGenAI;
-
-function initAi() {
-  if (!ai) {
-    if (!process.env.API_KEY) {
-      throw new Error("API_KEY environment variable is not set");
-    }
-    ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  }
-  return ai;
-}
-
-
 const fileToGenerativePart = async (file: File) => {
   const base64EncodedDataPromise = new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -317,66 +304,54 @@ Negative prompt: no watermark, no text, no logo, cartoon, low-res, blur, deformi
             }
         }
         
-        // LOGIKA BARU BERDASARKAN GAYA OBJEK
+        // UNIFIED LOGIC FOR FOOD STYLES
+        switch (adStyle) {
+            case 'indoor_studio':
+                styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
+                styleText = 'Studio Profesional';
+                break;
+            case 'outdoor_golden_hour':
+                styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
+                styleText = 'Outdoor Golden Hour';
+                break;
+            case 'cinematic_night':
+                styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
+                styleText = 'Sinematik Malam Hari';
+                break;
+            case 'lifestyle_natural':
+                styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
+                styleText = 'Gaya Hidup Natural';
+                break;
+            default:
+                // Fallback for 'none' or other cases, defaulting to a clean studio.
+                styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
+                styleText = 'Studio Profesional';
+                break;
+        }
+
+        let placementInstruction = '';
+        let negativePromptExtras = '';
+
         if (objectStyle === 'surface') {
-            switch (aestheticStyle) {
-                case 'cafe_minimalist':
-                    styleDetails = "Place the product naturally on a clean, minimalist cafe table. Use soft, bright, natural daylight from a nearby window. The background should be a slightly blurred, aesthetic cafe interior. Add minimal props like a small plant or a cup. The focus is on a clean, bright, and inviting atmosphere.";
-                    styleText = 'Kafe Minimalis';
-                    break;
-                case 'dramatic_spotlight':
-                    styleDetails = "Place the product on a dark, textured surface like slate or dark wood. Use a single, dramatic spotlight from above to highlight the product's texture and form, creating deep shadows. The background should be completely dark and out of focus. This style creates a premium, moody, and sophisticated look.";
-                    styleText = 'Sorotan Dramatis';
-                    break;
-                case 'warm_rustic':
-                    styleDetails = "Place the product on a rustic wooden table or surface. Surround it with natural, complementary elements like whole ingredients or rustic fabrics. Use warm, soft, ambient lighting to create a cozy, homemade, and authentic feel. The composition should be natural and slightly imperfect.";
-                    styleText = 'Gaya Rustik Hangat';
-                    break;
-            }
-            categorySpecificDetails = `${presentationInstruction}
+            placementInstruction = `The product should be presented aesthetically on a relevant surface (like a table, counter, or stand) that fits the scene. It must NOT be floating.`;
+            negativePromptExtras = ', floating product';
+        } else { // levitating
+            const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
+            placementInstruction = `Make the product levitate elegantly in the center.
+Surround the levitating product with its key ingredients or related elements, also floating dynamically.
+${dynamicEffects}`;
+            negativePromptExtras = ', do not place the product on a plate or in another container';
+        }
+        
+        categorySpecificDetails = `${presentationInstruction}
 ${modelPrompt}
-The product should be presented aesthetically on a surface, NOT floating.
+${placementInstruction}
 The scene style is: ${styleDetails}
 ${colorTonePrompt}
 The final image must look like a real, high-end commercial photograph.
 Focus on realistic textures, professional lighting, and a beautiful composition.
 8K resolution, ultra-realistic, hero shot.
-Negative prompt: no watermark, no text, no logos, cartoon, low-res, blur, deformities, floating product.`;
-
-        } else { // LOGIKA UNTUK GAYA MELAYANG
-            switch (adStyle) {
-                case 'indoor_studio':
-                    styleDetails = "High-end studio setting with professional softbox lighting. Clean reflections, cinematic shadows, and a smooth, minimal backdrop gradient.";
-                    styleText = 'Studio Profesional';
-                    break;
-                case 'outdoor_golden_hour':
-                    styleDetails = "Outdoor setting during the golden hour. Warm, golden sunlight casting soft highlights and long shadows, creating a beautiful natural bokeh.";
-                    styleText = 'Outdoor Golden Hour';
-                    break;
-                case 'cinematic_night':
-                    styleDetails = "Dramatic night scene with cinematic lighting. Use key lights to highlight the product, creating a premium and mysterious atmosphere against a dark background.";
-                    styleText = 'Sinematik Malam Hari';
-                    break;
-                case 'lifestyle_natural':
-                    styleDetails = "A natural, real-life environment like a cozy kitchen or a café. Use soft, ambient daylight to create a relaxed and authentic atmosphere.";
-                    styleText = 'Gaya Hidup Natural';
-                    break;
-            }
-
-            const dynamicEffects = "For hot food, add subtle steam or smoke. For beverages, add realistic condensation or a dynamic splash. For other products, add complementary floating ingredients or elements.";
-
-            categorySpecificDetails = `${presentationInstruction}
-${modelPrompt}
-Make the product levitate elegantly in the center.
-Surround the levitating product with its key ingredients or related elements, also floating dynamically.
-${dynamicEffects}
-The scene style is: ${styleDetails}
-${colorTonePrompt}
-The final image must look like a real, high-end commercial photograph.
-Focus on realistic textures, cinematic lighting, and a professional composition.
-8K resolution, ultra-realistic, hero shot.
-Negative prompt: no watermark, no text, no logos, cartoon, low-res, deformities, extra objects overlapping the product, do not place the product on a plate or in another container.`;
-        }
+Negative prompt: no watermark, no text, no logos, cartoon, low-res, deformities${negativePromptExtras}.`;
     }
     
     // START OF FIX: Restructure prompt to be more forceful about aspect ratio
@@ -452,7 +427,10 @@ export const generateAdPhotos = async (
   objectStyle?: ObjectStyle
 ): Promise<{ images: string[]; warning: string | null }> => {
   try {
-    const genAI = initAi();
+    if (!process.env.API_KEY) {
+      throw new Error("API key not found. Please select a valid API key to continue.");
+    }
+    const genAI = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
     const textPrompt = getPrompt(
       category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, automotiveModification, carColor,
@@ -530,9 +508,18 @@ export const generateAdPhotos = async (
 
     return { images: generatedImages, warning };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error generating images with Gemini:", error);
-    // Throw a generic message for unexpected errors. The partial success case is handled above.
+    
+    // Check for specific, user-friendly error messages
+    if (error.message && (error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('quota'))) {
+        throw new Error("Anda telah melebihi kuota API Anda saat ini. Pastikan penagihan (billing) telah diaktifkan untuk proyek Anda dan coba lagi.");
+    }
+    if (error.message && error.message.includes('API key not valid')) {
+        throw new Error("API Key yang Anda gunakan tidak valid. Silakan pilih API key yang benar dan coba lagi.");
+    }
+
+    // Generic fallback
     throw new Error("Terjadi kesalahan tak terduga saat membuat foto iklan. Silakan coba lagi.");
   }
 };
