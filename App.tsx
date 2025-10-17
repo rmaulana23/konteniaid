@@ -64,48 +64,36 @@ type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about';
 
 const GUEST_GENERATION_LIMIT = 3;
 
-// Fungsi untuk membuat ID perangkat yang lebih kuat menggunakan Canvas Fingerprinting
+// Fungsi untuk membuat ID perangkat yang lebih andal dan konsisten di berbagai browser
 const getSimpleDeviceId = async (): Promise<string> => {
-    // Helper untuk canvas fingerprinting
-    const getCanvasFingerprint = (): string => {
-        try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return 'no-canvas-context';
+    const components: (string | number | undefined)[] = [];
 
-            // Gambar beberapa elemen unik untuk menghasilkan fingerprint
-            const text = 'Kontenia.id_donottrytohackme<@~`!?-/\\|>';
-            ctx.textBaseline = 'top';
-            ctx.font = '14px "Arial"';
-            ctx.textBaseline = 'alphabetic';
-            ctx.fillStyle = '#f60';
-            ctx.fillRect(125, 1, 62, 20);
-            ctx.fillStyle = '#069';
-            ctx.fillText(text, 2, 15);
-            ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
-            ctx.fillText(text, 4, 17);
+    // Screen properties (sangat stabil di berbagai browser)
+    components.push(window.screen.width);
+    components.push(window.screen.height);
+    components.push(window.screen.colorDepth);
+    components.push(window.screen.pixelDepth);
 
-            return canvas.toDataURL();
-        } catch (e) {
-            console.error("Canvas fingerprinting failed:", e);
-            return 'canvas-fingerprint-error';
-        }
-    };
+    // Hardware properties (cukup stabil)
+    components.push(navigator.hardwareConcurrency);
+    // 'deviceMemory' tidak standar, tetapi memberikan keunikan tambahan di browser yang mendukung
+    components.push((navigator as any).deviceMemory); 
 
-    const { language, hardwareConcurrency } = navigator;
-    const screenResolution = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
-    const timezoneOffset = new Date().getTimezoneOffset();
-    const canvasFingerprint = getCanvasFingerprint();
+    // Timezone (stabil untuk satu sesi)
+    components.push(new Date().getTimezoneOffset());
+    
+    // Platform (stabil)
+    components.push(navigator.platform);
 
-    // Identifier baru tidak lagi menggunakan userAgent, sehingga lebih konsisten antar browser
-    const identifier = `${canvasFingerprint}${screenResolution}${hardwareConcurrency}${timezoneOffset}${language}`;
+    // Gabungkan semua komponen menjadi satu string unik
+    const identifier = components.join('|');
 
-    // Fungsi hash sederhana (djb2)
+    // Fungsi hash sederhana (djb2) untuk menghasilkan ID numerik
     let hash = 5381;
     for (let i = 0; i < identifier.length; i++) {
         hash = (hash * 33) ^ identifier.charCodeAt(i);
     }
-    return String(hash >>> 0); // Pastikan integer positif
+    return String(hash >>> 0); // Pastikan hasilnya integer positif
 };
 
 
