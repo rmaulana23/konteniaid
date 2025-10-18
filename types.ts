@@ -10,6 +10,10 @@ export type ObjectStyle = 'surface' | 'levitating';
 
 export type ModelGender = 'woman' | 'man' | 'kids' | 'custom' | 'adult_woman' | 'adult_man' | 'child_woman' | 'child_man';
 
+// New types for fashion model selection
+export type FashionGender = 'man' | 'woman' | 'custom';
+export type FashionAge = 'adult' | 'child';
+
 export type ModelEthnicity = 'indonesian' | 'caucasian';
 
 export type VehicleType = 'mobil' | 'motor';

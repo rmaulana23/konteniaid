@@ -1,4 +1,4 @@
-import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle, SocialMediaPlatform } from './types';
+import { ProductCategory, AdStyle, SelectOption, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle, SocialMediaPlatform, FashionGender, FashionAge } from './types';
 
 export const PRODUCT_CATEGORIES: SelectOption<ProductCategory>[] = [
   { value: 'food_beverage', label: 'Makanan & Minuman' },
@@ -116,12 +116,15 @@ export const MODEL_GENDER_OPTIONS: SelectOption<ModelGender>[] = [
     { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
 ];
 
-export const FASHION_MODEL_OPTIONS: SelectOption<ModelGender>[] = [
-    { value: 'adult_woman', label: 'Wanita Dewasa' },
-    { value: 'adult_man', label: 'Pria Dewasa' },
-    { value: 'child_woman', label: 'Anak Perempuan' },
-    { value: 'child_man', label: 'Anak Laki-laki' },
+export const FASHION_GENDER_OPTIONS: SelectOption<FashionGender>[] = [
+    { value: 'woman', label: 'Wanita' },
+    { value: 'man', label: 'Pria' },
     { value: 'custom', label: 'Custom (Upload Foto Sendiri)' },
+];
+
+export const FASHION_AGE_OPTIONS: SelectOption<FashionAge>[] = [
+    { value: 'adult', label: 'Dewasa' },
+    { value: 'child', label: 'Anak' },
 ];
 
 export const MODEL_ETHNICITY_OPTIONS: SelectOption<ModelEthnicity>[] = [

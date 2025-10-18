@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, Modality, Part } from "@google/genai";
-import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle, SocialMediaEntry } from '../types';
+import { ProductCategory, AdStyle, ModelGender, AutomotiveModification, CarColor, VehicleType, ColorTone, LiveryStyle, PhotoFormat, AestheticStyle, ModelEthnicity, ObjectStyle, FoodTheme, PosterStyle, SocialMediaEntry, FashionGender, FashionAge } from '../types';
 
 // Fix: Initialize the GoogleGenAI client.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -29,6 +28,7 @@ const getPrompt = (
     category: ProductCategory, 
     adStyle: AdStyle, 
     photoFormat: PhotoFormat,
+    variations: number,
     aestheticStyle?: AestheticStyle,
     modelGender?: ModelGender, 
     modelEthnicity?: ModelEthnicity,
@@ -57,7 +57,10 @@ const getPrompt = (
     productSlogan?: string,
     posterStyle?: PosterStyle,
     socialMediaEntries?: SocialMediaEntry[],
-    callToAction?: string
+    callToAction?: string,
+    fashionGender?: FashionGender,
+    fashionAge?: FashionAge,
+    useMannequin?: 'yes' | 'no'
 ): string => {
     let categorySpecificDetails = '';
     let styleText = 'profesional';
@@ -87,11 +90,13 @@ const getPrompt = (
         }
         
         let modelPrompt = '';
-        if (modelGender === 'custom' && hasCustomModel) {
-            modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}. The uploaded fashion product must be realistically placed ON this model, replacing whatever they were originally wearing. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
+        if (fashionGender === 'custom' && hasCustomModel) {
+            modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}. The uploaded fashion product must be realistically placed ON this model, replacing whatever they were originally wearing. It must look completely natural, as if they are actually wearing it, with proper fit, folds, and shadows conforming to their body and pose. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
+        } else if (useMannequin === 'yes') {
+            modelPrompt = `Display the product on a high-end, realistic, gender-neutral mannequin. The mannequin should be posed elegantly within the following commercial setting: ${styleDescription}. The product must fit the mannequin perfectly, showing natural drapes and folds.`;
         } else {
             let ethnicityText = '';
-            if (modelGender !== 'custom' && modelEthnicity) {
+            if (modelEthnicity) {
                 switch(modelEthnicity) {
                     case 'indonesian':
                         ethnicityText = 'an Indonesian (Southeast Asian)';
@@ -102,34 +107,32 @@ const getPrompt = (
                 }
             }
 
-            let genderText = '';
-            switch (modelGender) {
-                case 'adult_woman':
-                    genderText = 'adult female model';
-                    break;
-                case 'adult_man':
-                    genderText = 'adult male model';
-                    break;
-                case 'child_woman':
-                    genderText = 'female child model (girl, age around 8-12, looking happy and natural)';
-                    break;
-                case 'child_man':
-                    genderText = 'male child model (boy, age around 8-12, looking happy and natural)';
-                    break;
-                default:
-                    genderText = 'female model'; // Fallback
+            let ageText = fashionAge === 'adult' ? 'adult' : 'child';
+            let genderText = fashionGender === 'man' ? 'male model' : 'female model';
+
+            if (ageText === 'child') {
+              genderText = fashionGender === 'man' 
+                  ? 'male child model (boy, age around 8-12, looking happy and natural)' 
+                  : 'female child model (girl, age around 8-12, looking happy and natural)';
             }
             
-            const fullModelDescription = `${ethnicityText} ${genderText}`.trim();
-            modelPrompt = `Make the product appear realistically worn or held by a stylish ${fullModelDescription}, photographed in the following commercial setting: ${styleDescription}`;
+            const fullModelDescription = `${ethnicityText} ${ageText} ${genderText}`.trim();
+            modelPrompt = `The uploaded fashion product MUST be realistically worn, held, or used by a stylish ${fullModelDescription}. The model should be photographed in the following commercial setting: ${styleDescription}. The product must look like it is naturally part of the model's outfit, fitting them perfectly and conforming to their body's posture, creating realistic folds, creases, and shadows. It must not look digitally pasted on.`;
+        }
+        
+        let poseInstruction = `IMPORTANT: For each image variation generated, you MUST create a completely different and unique pose for the model. Do not repeat poses between variations.`;
+        if (variations > 1) {
+            poseInstruction += ` To provide a dynamic and versatile set of photos, the poses MUST include a mix of both standing and sitting positions. For example, if generating two variations, one pose must be standing and the other must be sitting. If generating three variations, provide a mix such as two standing and one sitting, or vice versa.`;
         }
 
         categorySpecificDetails = `${modelPrompt}
-Ensure the product remains the main focus, well-lit, and clearly visible. Add subtle depth of field, professional lighting, and realistic skin tone.
-The overall image should look like a premium ad campaign photo used for brand mockups or social media content.
+${poseInstruction}
+CRUCIAL: If generating multiple variations, the model's facial features, hair, and overall identity MUST remain identical and consistent across all images. Only the pose and composition should change to create a cohesive set of photos.
+Ensure the product remains the main focus, well-lit, and clearly visible. The final image should be a premium ad campaign photo.
+The product (e.g., shirt, bag, shoes) must be seamlessly integrated onto the model, not just floating or poorly edited on top of them. It needs to look like they are actually wearing or using it.
 Ultra-realistic 8K resolution, high dynamic range, editorial photography quality, shallow depth of field, captured with 85mm lens, commercial lighting setup.
 Style keywords: cinematic, minimal, realistic textures, clean composition, aesthetic modern branding, professional model photography.
-Negative Prompt: no watermark, no text, no logo, no multiple models, no distorted product, no overexposure, no unrealistic background, no cartoon style, no messy composition.`;
+Negative Prompt: no watermark, no text, no logo, multiple models, distorted product, overexposure, unrealistic background, cartoon style, messy composition, poorly fitted clothing, floating product, repeated poses, different faces on the same model.`;
     }
     else if (category === 'automotive') {
         let styleDescription = '';
@@ -327,7 +330,10 @@ export const generateAdPhotos = async (
     productSlogan?: string,
     posterStyle?: PosterStyle,
     socialMediaEntries?: SocialMediaEntry[],
-    callToAction?: string
+    callToAction?: string,
+    fashionGender?: FashionGender,
+    fashionAge?: FashionAge,
+    useMannequin?: 'yes' | 'no'
 ): Promise<{ images: string[]; warning?: string }> => {
     try {
         const imageParts: Part[] = [];
@@ -346,12 +352,12 @@ export const generateAdPhotos = async (
         }
         
         const prompt = getPrompt(
-            category, adStyle, photoFormat, aestheticStyle, modelGender, modelEthnicity, 
+            category, adStyle, photoFormat, variations, aestheticStyle, modelGender, modelEthnicity, 
             automotiveModification, carColor, vehicleType, customPrompt, customCarColor, 
             colorTone, spoiler, wideBody, rims, hood, allBumper, livery, !!stickerFile, 
             !!personImageFile, personMode, !!customModelFile, addModelToFood, objectStyle, 
             addFoodEffects, forceOpenPackage, foodTheme, productName, productSlogan, 
-            posterStyle, socialMediaEntries, callToAction
+            posterStyle, socialMediaEntries, callToAction, fashionGender, fashionAge, useMannequin
         );
 
         const allParts: Part[] = [...imageParts, { text: prompt }];

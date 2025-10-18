@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -35,6 +36,8 @@ import {
   FoodTheme,
   PosterStyle,
   SocialMediaEntry,
+  FashionGender,
+  FashionAge,
 } from './types';
 
 import {
@@ -43,7 +46,8 @@ import {
   FASHION_AD_STYLES,
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
-  FASHION_MODEL_OPTIONS,
+  FASHION_GENDER_OPTIONS,
+  FASHION_AGE_OPTIONS,
   MODEL_ETHNICITY_OPTIONS,
   AUTOMOTIVE_MODIFICATION_OPTIONS,
   MOTORCYCLE_MODIFICATION_OPTIONS,
@@ -205,6 +209,12 @@ const App: React.FC = () => {
   const [callToAction, setCallToAction] = useState('');
   const [socialMediaEntries, setSocialMediaEntries] = useState<SocialMediaEntry[]>([]);
 
+  // New state for Fashion Model Selection
+  const [fashionGender, setFashionGender] = useState<FashionGender>('woman');
+  const [fashionAge, setFashionAge] = useState<FashionAge>('adult');
+  const [useMannequin, setUseMannequin] = useState<'yes' | 'no'>('no');
+
+
   // Custom Automotive Mod State
   const [spoiler, setSpoiler] = useState<'yes' | 'no'>('no');
   const [wideBody, setWideBody] = useState<'yes' | 'no'>('no');
@@ -280,6 +290,9 @@ const App: React.FC = () => {
     setPosterStyle('modern_clean');
     setSocialMediaEntries([]);
     setCallToAction('');
+    setFashionGender('woman');
+    setFashionAge('adult');
+    setUseMannequin('no');
   };
 
   const handleGoHome = () => {
@@ -320,7 +333,9 @@ const App: React.FC = () => {
         setPhotoFormat('9:16');
     } else if (category === 'fashion_lifestyle') {
         setAdStyle('indoor_studio');
-        setModelGender('adult_woman');
+        setFashionGender('woman');
+        setFashionAge('adult');
+        setUseMannequin('no');
         setPhotoFormat('4:5');
     } else {
         setAdStyle('indoor_studio');
@@ -462,7 +477,7 @@ const App: React.FC = () => {
     setWarning(null);
     setGeneratedImages([]);
     
-    const isFashionWithCustomModel = selectedCategory === 'fashion_lifestyle' && modelGender === 'custom';
+    const isFashionWithCustomModel = selectedCategory === 'fashion_lifestyle' && fashionGender === 'custom';
     const isFoodWithCustomModel = selectedCategory === 'food_beverage' && addModelToFood === 'yes' && modelGender === 'custom';
 
 
@@ -502,7 +517,10 @@ const App: React.FC = () => {
         productSlogan,
         posterStyle,
         socialMediaEntries,
-        callToAction
+        callToAction,
+        fashionGender,
+        fashionAge,
+        useMannequin
       );
       setGeneratedImages(result.images);
       if (result.warning) {
@@ -780,31 +798,38 @@ const App: React.FC = () => {
                 {selectedCategory === 'fashion_lifestyle' && (
                   <>
                     <div>
-                        <OptionSelector title="2. Pilih Gaya Iklan" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
+                        <OptionSelector title="2. Pilih Gaya Iklan" options={FASHION_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v as AdStyle)} />
                         <p className="text-xs text-gray-500 mt-1 px-1">Pilih suasana pemotretan yang paling sesuai dengan citra merek Anda.</p>
                     </div>
                     <div>
-                        <OptionSelector title="3. Pilih Model" options={FASHION_MODEL_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
-                        <p className="text-xs text-gray-500 mt-1 px-1">Tentukan siapa yang akan memakai atau menampilkan produk fashion Anda.</p>
+                        <OptionSelector title="3. Pilih Model" options={FASHION_GENDER_OPTIONS} selectedValue={fashionGender} onValueChange={(v) => setFashionGender(v as FashionGender)} />
+                        <p className="text-xs text-gray-500 mt-1 px-1">Pilih gender model atau upload foto model Anda sendiri.</p>
                     </div>
-                    
-                    {modelGender !== 'custom' && (
-                        <div>
-                            <OptionSelector title="4. Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
-                            <p className="text-xs text-gray-500 mt-1 px-1">Pilih etnis model untuk menyesuaikan dengan target pasar Anda.</p>
+
+                    {fashionGender !== 'custom' && (
+                        <div className="space-y-4 border-l-2 border-brand-primary/50 pl-4 ml-2 bg-gray-50/50 py-3 rounded-r-lg">
+                            <div>
+                                <label className="block text-lg font-semibold mb-2 text-gray-800">Detail Model</label>
+                                <div className="space-y-4">
+                                    <OptionSelector title="Pilih Usia" options={FASHION_AGE_OPTIONS} selectedValue={fashionAge} onValueChange={(v) => setFashionAge(v as FashionAge)} />
+                                    <OptionSelector title="Gunakan Manekin?" options={YES_NO_OPTIONS} selectedValue={useMannequin} onValueChange={(v) => setUseMannequin(v)} />
+                                    <OptionSelector title="Pilih Etnis" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v as ModelEthnicity)} disabled={useMannequin === 'yes'} />
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2 px-1">Opsi Etnis diabaikan jika menggunakan manekin.</p>
+                            </div>
                         </div>
                     )}
 
-                    {modelGender === 'custom' && (
-                        <div className="space-y-1 border border-gray-200 rounded-lg p-2 bg-gray-50">
-                            <label className="block text-sm font-semibold text-gray-700">Upload Foto Model</label>
+                    {fashionGender === 'custom' && (
+                        <div className="space-y-1 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <label className="block text-lg font-semibold text-gray-800">Upload Foto Model</label>
                             <p className="text-xs text-gray-500 mb-2">Penting: Foto harus menampilkan seluruh badan (full body) untuk hasil terbaik.</p>
-                             <p className="text-xs text-gray-500 -mt-1 mb-2">AI akan mengganti pakaian model asli dengan produk yang Anda unggah.</p>
+                            <p className="text-xs text-gray-500 -mt-1 mb-2">AI akan mengganti pakaian model asli dengan produk yang Anda unggah.</p>
                             <input 
                                 type="file" 
                                 onChange={handleCustomModelUpload}
                                 accept="image/png, image/jpeg" 
-                                className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
+                                className="text-sm file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100 w-full"
                             />
                             {customModelPreview && (
                                 <img src={customModelPreview} alt="Custom model preview" className="mt-2 h-24 w-auto object-contain rounded-md mx-auto bg-gray-100 p-1"/>
@@ -813,6 +838,7 @@ const App: React.FC = () => {
                     )}
                   </>
                 )}
+
 
                 {selectedCategory === 'automotive' && (
                     <div>
