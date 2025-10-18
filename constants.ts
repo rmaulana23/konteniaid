@@ -47,8 +47,8 @@ export const SOCIAL_MEDIA_PLATFORM_OPTIONS: SelectOption<SocialMediaPlatform>[] 
   { value: 'x_twitter', label: 'X (Twitter)' },
 ];
 
-// Opsi untuk gaya melayang di kategori Makanan & Minuman
-export const LEVITATING_FOOD_AD_STYLES: SelectOption<AdStyle>[] = [
+// Opsi untuk gaya iklan di kategori Makanan & Minuman
+export const FOOD_AD_STYLES: SelectOption<AdStyle>[] = [
   { value: 'indoor_studio', label: 'Indoor Studio' },
   { value: 'outdoor_golden_hour', label: 'Outdoor Golden Hour' },
   { value: 'cinematic_night', label: 'Cinematic Night' },

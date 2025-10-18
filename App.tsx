@@ -42,7 +42,7 @@ import {
 
 import {
   PRODUCT_CATEGORIES,
-  LEVITATING_FOOD_AD_STYLES,
+  FOOD_AD_STYLES,
   FASHION_AD_STYLES,
   AUTOMOTIVE_AD_STYLES,
   MODEL_GENDER_OPTIONS,
@@ -200,7 +200,6 @@ const App: React.FC = () => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [customCarColor, setCustomCarColor] = useState('');
   const [addModelToFood, setAddModelToFood] = useState<'yes' | 'no'>('no');
-  const [addFoodEffects, setAddFoodEffects] = useState<'yes' | 'no'>('yes');
   // New state for Food Theme feature
   const [foodTheme, setFoodTheme] = useState<FoodTheme>('image');
   const [productName, setProductName] = useState('');
@@ -283,7 +282,6 @@ const App: React.FC = () => {
     setCustomModelFile(null);
     setCustomModelPreview(null);
     setAddModelToFood('no');
-    setAddFoodEffects('yes');
     setFoodTheme('image');
     setProductName('');
     setProductSlogan('');
@@ -510,7 +508,6 @@ const App: React.FC = () => {
         (isFashionWithCustomModel || isFoodWithCustomModel) ? customModelFile : null,
         addModelToFood,
         selectedCategory === 'food_beverage' ? objectStyle : undefined,
-        selectedCategory === 'food_beverage' ? addFoodEffects : undefined,
         undefined, // forceOpenPackage is now handled inside geminiService
         foodTheme,
         productName,
@@ -733,26 +730,16 @@ const App: React.FC = () => {
                         <div>
                             <OptionSelector 
                                 title="4. Pilih Gaya Iklan"
-                                options={LEVITATING_FOOD_AD_STYLES} 
+                                options={FOOD_AD_STYLES} 
                                 selectedValue={adStyle} 
                                 onValueChange={(v) => setAdStyle(v as AdStyle)}
                             />
-                            <p className="text-xs text-gray-500 mt-1 px-1">Tentukan latar belakang dan suasana keseluruhan foto.</p>
-                        </div>
-                        
-                        <div>
-                            <OptionSelector 
-                                title="5. Tambahkan Efek?"
-                                options={YES_NO_OPTIONS}
-                                selectedValue={addFoodEffects}
-                                onValueChange={(v) => setAddFoodEffects(v)}
-                            />
-                            <p className="text-xs text-gray-500 mt-1 px-1">Tambahkan elemen dinamis seperti percikan air, bahan, atau uap.</p>
+                            <p className="text-xs text-gray-500 mt-1 px-1">Tentukan latar belakang dan suasana keseluruhan foto. Efek dinamis seperti percikan atau uap akan ditambahkan secara otomatis.</p>
                         </div>
 
                         <div>
                             <OptionSelector 
-                                title="6. Tambahkan Model?"
+                                title="5. Tambahkan Model?"
                                 options={YES_NO_OPTIONS}
                                 selectedValue={addModelToFood}
                                 onValueChange={(v) => {

@@ -50,7 +50,6 @@ const getPrompt = (
     hasCustomModel?: boolean,
     addModelToFood?: 'yes' | 'no',
     objectStyle?: ObjectStyle,
-    addFoodEffects?: 'yes' | 'no',
     forceOpenPackage?: boolean,
     foodTheme?: FoodTheme,
     productName?: string,
@@ -91,9 +90,10 @@ const getPrompt = (
         
         let modelPrompt = '';
         if (fashionGender === 'custom' && hasCustomModel) {
-            modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}. The uploaded fashion product must be realistically placed ON this model, replacing whatever they were originally wearing. It must look completely natural, as if they are actually wearing it, with proper fit, folds, and shadows conforming to their body and pose. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
+            modelPrompt = `A separate full-body photo of a person has been uploaded. You MUST use this person as the model. Extract the person from their original background and realistically place them into the generated scene: ${styleDescription}.
+The uploaded fashion product MUST be extracted from its original photo and realistically placed ON this model, replacing whatever they were originally wearing. The product's appearance (design, color, details) must be preserved perfectly. It must look completely natural, as if they are actually wearing it, with proper fit, folds, and shadows conforming to their body and pose. Ensure the model's lighting, shadows, scale, and perspective are perfectly blended with the new environment to create a cohesive and believable advertisement.`;
         } else if (useMannequin === 'yes') {
-            modelPrompt = `Display the product on a high-end, realistic, gender-neutral mannequin. The mannequin should be posed elegantly within the following commercial setting: ${styleDescription}. The product must fit the mannequin perfectly, showing natural drapes and folds.`;
+            modelPrompt = `Display the product from the uploaded image on a high-end, realistic, gender-neutral mannequin. The product must be extracted perfectly and remain unchanged. The mannequin should be posed elegantly within the following commercial setting: ${styleDescription}. The product must fit the mannequin perfectly, showing natural drapes and folds.`;
         } else {
             let ethnicityText = '';
             if (modelEthnicity) {
@@ -117,290 +117,269 @@ const getPrompt = (
             }
             
             const fullModelDescription = `${ethnicityText} ${ageText} ${genderText}`.trim();
-            modelPrompt = `The uploaded fashion product MUST be realistically worn, held, or used by a stylish ${fullModelDescription}. The model should be photographed in the following commercial setting: ${styleDescription}. The product must look like it is naturally part of the model's outfit, fitting them perfectly and conforming to their body's posture, creating realistic folds, creases, and shadows. It must not look digitally pasted on.`;
+            modelPrompt = `The uploaded fashion product MUST be extracted perfectly and then realistically worn, held, or used by a stylish ${fullModelDescription}.
+CRITICAL: The product's design, color, texture, and all details MUST remain IDENTICAL to the original uploaded image. DO NOT change or alter the product itself.
+The model should be photographed in the following commercial setting: ${styleDescription}. The product must look like it is naturally part of the model's outfit, fitting them perfectly and conforming to their body's posture, creating realistic folds, creases, and shadows. It must not look digitally pasted on.`;
         }
         
         let poseInstruction = `IMPORTANT: For each image variation generated, you MUST create a completely different and unique pose for the model. Do not repeat poses between variations.`;
         if (variations > 1) {
-            poseInstruction += ` To provide a dynamic and versatile set of photos, the poses MUST include a mix of both standing and sitting positions. For example, if generating two variations, one pose must be standing and the other must be sitting. If generating three variations, provide a mix such as two standing and one sitting, or vice versa.`;
+            poseInstruction += ` To provide a dynamic and varied set of advertising images, it is crucial that each of the ${variations} variations features a unique pose.`;
         }
-
-        categorySpecificDetails = `${modelPrompt}
-${poseInstruction}
-CRUCIAL: If generating multiple variations, the model's facial features, hair, and overall identity MUST remain identical and consistent across all images. Only the pose and composition should change to create a cohesive set of photos.
-Ensure the product remains the main focus, well-lit, and clearly visible. The final image should be a premium ad campaign photo.
-The product (e.g., shirt, bag, shoes) must be seamlessly integrated onto the model, not just floating or poorly edited on top of them. It needs to look like they are actually wearing or using it.
-Ultra-realistic 8K resolution, high dynamic range, editorial photography quality, shallow depth of field, captured with 85mm lens, commercial lighting setup.
-Style keywords: cinematic, minimal, realistic textures, clean composition, aesthetic modern branding, professional model photography.
-Negative Prompt: no watermark, no text, no logo, multiple models, distorted product, overexposure, unrealistic background, cartoon style, messy composition, poorly fitted clothing, floating product, repeated poses, different faces on the same model.`;
-    }
-    else if (category === 'automotive') {
-        let styleDescription = '';
-        switch (adStyle) {
-            case 'indoor_studio':
-                styleDescription = '1. Showroom Premium: vehicle displayed in a glossy, minimalist indoor environment with soft reflection on the floor, professional studio lighting, high contrast, metallic highlights, and brand-like luxury presentation.';
-                styleText = 'Showroom Premium';
-                break;
-            case 'outdoor_golden_hour':
-                styleDescription = '2. Outdoor Action: dynamic shot of the vehicle on a scenic road during golden hour, with motion blur, dramatic lighting, and a sense of speed and freedom. The surrounding environment should complement the vehicle, like a mountain pass or coastal highway.';
-                styleText = 'Outdoor Action';
-                break;
-            case 'japanese_drifting':
-                 styleDescription = '3. Japanese Drifting: vehicle captured mid-drift on a wet city street at night, with neon lights reflecting on the pavement, smoke coming from the tires, and a cinematic, high-energy underground racing aesthetic.';
-                styleText = 'Japanese Drifting';
-                break;
-            case 'city_street':
-                styleDescription = '4. City Street: vehicle parked elegantly on a stylish urban street, perhaps in front of modern architecture or a classic building, creating a sophisticated lifestyle shot with natural city lighting and reflections.';
-                styleText = 'City Street';
-                break;
-            default:
-                styleDescription = 'Showroom Premium: vehicle displayed in a glossy, minimalist indoor environment with soft reflection on the floor, professional studio lighting, high contrast, metallic highlights, and brand-like luxury presentation.';
-                styleText = 'Showroom Premium';
-        }
-        
-        let modificationPrompt = '';
-        if (automotiveModification !== 'none' && automotiveModification !== 'custom') {
-            modificationPrompt = `Apply a professional ${automotiveModification} modification to the vehicle.`;
-        } else if (automotiveModification === 'custom') {
-            const customMods: string[] = [];
-            if (allBumper === 'yes') customMods.push('custom front and rear bumpers and side skirts');
-            if (spoiler === 'yes') customMods.push('a large rear spoiler');
-            if (wideBody === 'yes') customMods.push('a widebody kit');
-            if (rims === 'yes') customMods.push('custom aftermarket rims');
-            if (hood === 'yes') customMods.push('a custom hood with vents');
-            if (livery !== 'none') customMods.push(`a ${livery} livery`);
-            if (customMods.length > 0) {
-                modificationPrompt = `Apply the following custom modifications: ${customMods.join(', ')}.`;
-            }
-        }
-
-        let colorPrompt = '';
-        if (carColor !== 'original' && carColor !== 'custom') {
-            colorPrompt = `Change the vehicle's color to ${carColor.replace(/_/g, ' ')}.`;
-        } else if (carColor === 'custom' && customCarColor) {
-            colorPrompt = `Change the vehicle's color to ${customCarColor}.`;
-        }
-        
-        let stickerPrompt = '';
-        if (hasSticker) {
-            stickerPrompt = 'A separate sticker/logo image has been uploaded. Realistically place this sticker on the vehicle\'s body, like on the side door or hood, ensuring it follows the contours of the car.';
-        }
-        
-        let personPrompt = '';
-        if (hasPerson && personMode === 'full_body') {
-            personPrompt = 'A separate photo of a person has been uploaded. Realistically place this person next to the vehicle in a natural pose that fits the scene. The person should look like the owner or a model. Ensure their lighting, shadows, and scale match the environment perfectly.';
-        } else if (hasPerson && personMode === 'face_only') {
-            personPrompt = 'A separate photo of a person\'s face has been uploaded. Generate a full, stylish body for this person and place them realistically next to the vehicle in a natural pose. The generated body must match the provided face. Ensure lighting, shadows, and scale are perfect.';
-        }
-
-        categorySpecificDetails = `Create an ultra-realistic 8K commercial photograph of the uploaded ${vehicleType}.
-The scene should be: ${styleDescription}
-${modificationPrompt}
-${colorPrompt}
-${stickerPrompt}
-${personPrompt}
-${customPrompt || ''}
-The final image must look like a professional automotive advertisement. Focus on realistic reflections, lighting, and textures. High dynamic range, cinematic quality, captured with a 50mm lens.
-Negative Prompt: no watermark, no text, no logo (unless a sticker is provided), no distorted vehicle, no unrealistic proportions, blurry, cartoonish.`;
-    }
-    else if (category === 'food_beverage') {
-        if (foodTheme === 'poster') {
+        categorySpecificDetails = `${modelPrompt}\n\n${poseInstruction}`;
+    } else if (category === 'food_beverage') {
+      if (foodTheme === 'poster') {
             let posterStyleText = '';
-            switch(posterStyle) {
+            switch (posterStyle) {
                 case 'modern_clean':
-                    posterStyleText = 'a modern, clean, and minimalist style. Use a simple color palette, sans-serif fonts, and a lot of white space.';
+                    posterStyleText = 'a modern, clean, and minimalist design aesthetic. Use sans-serif fonts, ample white space, and a clear visual hierarchy.';
                     break;
                 case 'bold_energetic':
-                    posterStyleText = 'a bold, energetic, and eye-catching style. Use vibrant colors, dynamic typography, and strong graphic elements.';
+                    posterStyleText = 'a bold, energetic, and eye-catching design. Use strong typography, vibrant colors, and dynamic layouts.';
                     break;
                 case 'elegant_premium':
-                    posterStyleText = 'an elegant, premium, and luxurious style. Use dark tones, serif or script fonts, and sophisticated imagery.';
+                    posterStyleText = 'an elegant, premium, and luxurious design. Use serif fonts, a sophisticated color palette (e.g., gold, dark tones), and a refined layout.';
                     break;
             }
 
-            const socialMediaText = socialMediaEntries && socialMediaEntries.length > 0 && socialMediaEntries.some(e => e.handle.trim()) 
-                ? `Include icons and text for the following social media handles: ${socialMediaEntries.filter(e => e.handle.trim()).map(e => `${e.platform}: @${e.handle}`).join(', ')}.`
-                : '';
+            let socialMediaText = '';
+            if (socialMediaEntries && socialMediaEntries.length > 0) {
+                socialMediaText = 'Include the following social media handles:\n';
+                socialMediaEntries.forEach(entry => {
+                    socialMediaText += `- ${entry.platform}: ${entry.handle}\n`;
+                });
+            }
 
-            categorySpecificDetails = `Create a promotional poster for a product. The main subject is the uploaded food/beverage image.
-Product Name: ${productName}
-Slogan/Promo: ${productSlogan}
-Poster Style: Design the poster in ${posterStyleText}
-${callToAction ? `Call to Action Button Text: "${callToAction}"` : ''}
-${socialMediaText}
-The uploaded product image MUST be the central focus. Remove its original background and place it attractively on the poster. The overall design should be professional and ready for printing or social media.
-
-CRITICAL INSTRUCTIONS FOR TEXT:
-- All text elements (Product Name, Slogan, Call to Action, Social Media handles) MUST be perfectly clear, legible, and easy to read.
-- There must be ABSOLUTELY NO spelling errors or typos. Double-check every word against the provided text.
-- The text should be well-integrated into the design but have enough contrast to stand out. Do not place text over busy parts of the image without a proper background, outline, or shadow.
-
-Negative Prompt: distorted text, unreadable fonts, spelling errors, typos, messy layout, poor composition, blurry product image.`;
-        } else { // 'image' theme
+            categorySpecificDetails = `Create a promotional poster for a food/beverage product.
+- The product from the uploaded image MUST be the central focus. Extract it perfectly.
+- Poster Style: ${posterStyleText}
+- Main Title (Large Font): "${productName}"
+- Subtitle/Slogan (Smaller Font): "${productSlogan}"
+- Call to Action (if provided): "${callToAction}"
+- Social Media (if provided): ${socialMediaText}
+- The background should be thematic and complementary to the product and poster style.
+- All text must be clearly legible and well-integrated into the design.
+- DO NOT invent new text elements unless specified.`;
+        } else { // image theme
             let styleDescription = '';
-            let objectPrompt = '';
-            if (objectStyle === 'levitating') {
-                 styleDescription = `The main subject is the uploaded food/beverage item, which should be levitating in the center of the frame. The background should be a minimal ${adStyle.replace(/_/g, ' ')} setting.`;
-                 if (addFoodEffects === 'yes') {
-                    objectPrompt = 'Add dynamic, high-speed photography effects like liquid splashes, floating ingredients, or a gentle cloud of steam/smoke around the levitating product to create a sense of motion and freshness.';
-                 }
-            } else { // surface
-                switch(aestheticStyle) {
-                    case 'cafe_minimalist':
-                        styleDescription = `The product is placed on a clean surface in a minimalist cafe setting. Use soft, natural daylight, with subtle background elements like a wooden table, a simple ceramic plate, or a hint of green plant life. The focus is entirely on the product.`;
-                        break;
-                    case 'dramatic_spotlight':
-                        styleDescription = `The product is presented on a dark surface with a single, dramatic spotlight from above. This creates high contrast, deep shadows, and highlights the product's texture. The background should be completely black or very dark grey.`;
-                        break;
-                    case 'warm_rustic':
-                        styleDescription = `The product is set on a rustic wooden surface, surrounded by warm, cozy elements like a linen napkin, vintage cutlery, or scattered spices. The lighting should be warm, like golden hour sunlight, creating a comfortable and inviting atmosphere.`;
-                        break;
-                }
-                if (addFoodEffects === 'yes') {
-                   objectPrompt = 'Add subtle, realistic effects like a gentle wisp of steam (for hot items), condensation droplets (for cold items), or a sprinkle of powdered sugar/spices on the surface around the product.';
-                }
+            switch (adStyle) {
+                case 'indoor_studio':
+                    styleDescription = 'a clean, professional indoor studio setting with controlled softbox lighting. The background should be minimal and non-distracting, like a solid color or subtle gradient, to emphasize the product.';
+                    break;
+                case 'outdoor_golden_hour':
+                    styleDescription = 'an outdoor setting during the golden hour (late afternoon) with warm, beautiful, and slightly dramatic lighting. The background could be a rustic table, a picnic scene, or a beautiful natural landscape.';
+                    break;
+                case 'cinematic_night':
+                    styleDescription = 'a dramatic, cinematic night scene. Use strong contrast, deep shadows, and focused lighting (like a spotlight) to create a moody and premium feel. The background could be a dark, elegant bar or a city scene at night.';
+                    break;
+                case 'lifestyle_natural':
+                    styleDescription = 'a natural, lifestyle setting that feels authentic and relatable, such as a cozy home kitchen, a bright cafe, or a casual gathering. The lighting should be soft and natural (e.g., daylight from a window).';
+                    break;
             }
-            
-            let packagePrompt = '';
-            if (forceOpenPackage) {
-                packagePrompt = 'IMPORTANT: The uploaded image shows a product in its packaging. You MUST generate an image of the product *outside* of its packaging, ready to be consumed. For example, if it is a bag of chips, show the chips in a bowl. If it is a bottle of soda, show the soda in a glass with ice.';
-            }
+
+            let objectStyleText = objectStyle === 'levitating' 
+                ? 'The product should be levitating in the air for a magical and dynamic effect. Add dynamic elements like splashes, steam, or floating ingredients around it.' 
+                : 'The product should be placed on a suitable surface (e.g., a wooden table, marble countertop, slate plate) that matches the scene.';
 
             let modelPrompt = '';
-            if (addModelToFood === 'yes' && modelGender) {
+            if (addModelToFood === 'yes') {
                 if (modelGender === 'custom' && hasCustomModel) {
-                    modelPrompt = `A separate photo of a person has been uploaded. Realistically place this person in the scene, interacting naturally with the food/beverage product (e.g., holding it, about to take a bite). The person should look happy and satisfied. Blend their lighting, shadows, and scale perfectly.`;
+                    modelPrompt = `An additional photo of a person has been uploaded. You MUST use this person as the model. Extract the person and place them realistically into the scene, interacting with the food product in a natural way (e.g., holding it, about to eat it, smiling next to it). The scene is: ${styleDescription}.`;
                 } else {
                     const ethnicityText = modelEthnicity === 'indonesian' ? 'an Indonesian' : 'a Caucasian';
                     const genderText = modelGender === 'woman' ? 'female model' : 'male model';
-                    modelPrompt = `Include a stylish ${ethnicityText} ${genderText} in the scene, interacting naturally and happily with the product. The model should not be the main focus but should enhance the product's appeal.`;
+                    modelPrompt = `Include a happy and stylish ${ethnicityText} ${genderText} in the scene, interacting naturally with the product. The model should enhance the product, not distract from it.`;
                 }
             }
-
-            categorySpecificDetails = `Create an ultra-realistic 8K commercial photograph of the uploaded food/beverage product.
-${packagePrompt}
-Scene Description: ${styleDescription}
-Effects: ${objectPrompt}
-Model: ${modelPrompt}
-${customPrompt || ''}
-The final image should look like a premium food advertisement. Emphasize textures, colors, and freshness. Use a shallow depth of field, captured with a macro lens for detail.
-Negative Prompt: no watermark, no text, no logo, unrealistic colors, messy composition, distorted product.`;
+            
+            categorySpecificDetails = `Create an advertisement image featuring the food product from the uploaded photo.
+- Scene Description: ${styleDescription}
+- Product Placement: ${objectStyleText}
+- Dynamic Effects: Automatically add relevant dynamic effects like steam for hot food, condensation for cold drinks, splashes for liquids, or floating ingredients to make the image look delicious and appealing.
+${modelPrompt}`;
         }
+    } else if (category === 'automotive') {
+        let styleDescription = '';
+        switch (adStyle) {
+            case 'indoor_studio':
+                styleDescription = 'a professional indoor studio or showroom with perfect, reflective lighting and a clean, minimal background to highlight the vehicle\'s design.';
+                break;
+            case 'outdoor_golden_hour':
+                styleDescription = 'an outdoor action shot on a scenic road (e.g., mountain pass, coastal highway) during the golden hour. The vehicle should be in motion, conveying speed and freedom.';
+                break;
+            case 'japanese_drifting':
+                styleDescription = 'a dynamic Japanese drifting scene at night. The vehicle should be mid-drift on a neon-lit city street or a mountain touge pass, with smoke coming from the tires and a strong sense of motion.';
+                break;
+            case 'city_street':
+                styleDescription = 'a stylish city street scene, either during the day with architectural backgrounds or at night with vibrant city lights and reflections on the vehicle.';
+                break;
+        }
+
+        let modificationPrompt = `The vehicle is a ${vehicleType}. `;
+        if (automotiveModification === 'none') {
+            modificationPrompt += 'It should not be modified.';
+        } else if (automotiveModification === 'custom') {
+            modificationPrompt += 'Apply the following custom modifications:\n';
+            if (allBumper === 'yes') modificationPrompt += '- Add a custom front bumper, rear bumper, and side skirts.\n';
+            if (spoiler === 'yes') modificationPrompt += '- Add a large rear spoiler/wing.\n';
+            if (wideBody === 'yes') modificationPrompt += '- Add a widebody kit with fender flares.\n';
+            if (rims === 'yes') modificationPrompt += '- Change the wheels to custom aftermarket rims.\n';
+            if (hood === 'yes') modificationPrompt += '- Add a custom hood with vents.\n';
+            if (livery !== 'none') modificationPrompt += `- Apply a ${livery.replace('_', ' ')} livery.\n`;
+        } else {
+            modificationPrompt += `Apply a full ${automotiveModification.replace(/_/g, ' ')} modification style to it.`;
+        }
+
+        if (carColor !== 'original') {
+            modificationPrompt += `The vehicle's color MUST be changed to ${carColor === 'custom' ? customCarColor : carColor.replace(/_/g, ' ')}.`;
+        }
+
+        let personPrompt = '';
+        if (hasPerson) {
+            if (personMode === 'face_only') {
+                personPrompt = 'An image of a person\'s face has been uploaded. Create a full, photorealistic body for this person that matches the style of the scene and vehicle, and place them next to the vehicle in a cool, natural pose (e.g., leaning against it, standing beside it).';
+            } else {
+                personPrompt = 'A full-body image of a person has been uploaded. Extract this person from their background and place them realistically next to the vehicle in a cool, natural pose.';
+            }
+        }
+        
+        let stickerPrompt = hasSticker ? 'A sticker/logo image has been uploaded. Realistically apply this sticker to the side of the vehicle (e.g., on the door or fender).' : '';
+
+        categorySpecificDetails = `Create an advertisement image for the vehicle in the uploaded photo.
+- Scene Description: ${styleDescription}
+- Vehicle Modifications: ${modificationPrompt}
+${stickerPrompt}
+${personPrompt}`;
     }
 
-    const finalPrompt = `ASPECT RATIO: ${photoFormat}.
-${categorySpecificDetails}
-TONE: The overall color tone should be ${colorTone}.`;
+    const basePrompt = `Create ${variations} photorealistic, professional-grade advertisement ${foodTheme === 'poster' ? 'poster' : 'image'}(s) for the product in the uploaded image.`;
+
+    const formatInstruction = `The final image(s) MUST be in a ${photoFormat} aspect ratio.`;
+    
+    // Assembling the final prompt
+    let finalPrompt = `${basePrompt}\n\n${categorySpecificDetails}\n\n${formatInstruction}`;
+    
+    if (customPrompt) {
+        finalPrompt += `\n\nAdditional user instructions: "${customPrompt}"`;
+    }
+
+    if (colorTone && colorTone !== 'natural') {
+        finalPrompt += `\nApply a ${colorTone} color tone to the final image.`;
+    }
+
+    finalPrompt += "\n\nCRITICAL INSTRUCTIONS:\n1. The original product/vehicle from the uploaded image MUST be perfectly extracted and placed in the new scene. DO NOT change its core design, shape, or key details unless modification instructions are given.\n2. The final image must be ultra-realistic, high-resolution, and look like a professional advertisement.\n3. Ensure lighting, shadows, and perspective are perfectly blended for a believable result.";
     
     return finalPrompt;
 };
 
-// Fix: Implemented and exported generateAdPhotos function
+// Fix: Add and export generateAdPhotos function.
 export const generateAdPhotos = async (
-    productImage: File,
-    category: ProductCategory,
-    adStyle: AdStyle,
-    variations: number,
-    photoFormat: PhotoFormat,
-    aestheticStyle?: AestheticStyle,
-    modelGender?: ModelGender,
-    modelEthnicity?: ModelEthnicity,
-    automotiveModification?: AutomotiveModification,
-    carColor?: CarColor,
-    vehicleType?: VehicleType,
-    customPrompt?: string,
-    customCarColor?: string,
-    colorTone?: ColorTone,
-    spoiler?: 'yes' | 'no',
-    wideBody?: 'yes' | 'no',
-    rims?: 'yes' | 'no',
-    hood?: 'yes' | 'no',
-    allBumper?: 'yes' | 'no',
-    livery?: LiveryStyle,
-    stickerFile?: File | null,
-    personImageFile?: File | null,
-    personMode?: 'full_body' | 'face_only',
-    customModelFile?: File | null,
-    addModelToFood?: 'yes' | 'no',
-    objectStyle?: ObjectStyle,
-    addFoodEffects?: 'yes' | 'no',
-    forceOpenPackage?: boolean,
-    foodTheme?: FoodTheme,
-    productName?: string,
-    productSlogan?: string,
-    posterStyle?: PosterStyle,
-    socialMediaEntries?: SocialMediaEntry[],
-    callToAction?: string,
-    fashionGender?: FashionGender,
-    fashionAge?: FashionAge,
-    useMannequin?: 'yes' | 'no'
-): Promise<{ images: string[]; warning?: string }> => {
-    try {
-        const imageParts: Part[] = [];
+  productImage: File,
+  category: ProductCategory,
+  adStyle: AdStyle,
+  variations: number,
+  photoFormat: PhotoFormat,
+  aestheticStyle?: AestheticStyle,
+  modelGender?: ModelGender,
+  modelEthnicity?: ModelEthnicity,
+  automotiveModification?: AutomotiveModification,
+  carColor?: CarColor,
+  vehicleType?: VehicleType,
+  customPrompt?: string,
+  customCarColor?: string,
+  colorTone?: ColorTone,
+  spoiler?: 'yes' | 'no',
+  wideBody?: 'yes' | 'no',
+  rims?: 'yes' | 'no',
+  hood?: 'yes' | 'no',
+  allBumper?: 'yes' | 'no',
+  livery?: LiveryStyle,
+  stickerFile?: File | null,
+  personImageFile?: File | null,
+  personMode?: 'full_body' | 'face_only',
+  customModelFile?: File | null,
+  addModelToFood?: 'yes' | 'no',
+  objectStyle?: ObjectStyle,
+  forceOpenPackage?: boolean,
+  foodTheme?: FoodTheme,
+  productName?: string,
+  productSlogan?: string,
+  posterStyle?: PosterStyle,
+  socialMediaEntries?: SocialMediaEntry[],
+  callToAction?: string,
+  fashionGender?: FashionGender,
+  fashionAge?: FashionAge,
+  useMannequin?: 'yes' | 'no'
+): Promise<{ images: string[], warning?: string }> => {
+  const prompt = getPrompt(
+    category, adStyle, photoFormat, variations, aestheticStyle, modelGender, modelEthnicity,
+    automotiveModification, carColor, vehicleType, customPrompt, customCarColor, colorTone,
+    spoiler, wideBody, rims, hood, allBumper, livery, !!stickerFile, !!personImageFile, personMode,
+    !!customModelFile, addModelToFood, objectStyle, forceOpenPackage, foodTheme,
+    productName, productSlogan, posterStyle, socialMediaEntries, callToAction, fashionGender,
+    fashionAge, useMannequin
+  );
 
-        const mainImagePart = await fileToGenerativePart(productImage);
-        imageParts.push(mainImagePart);
-        
-        if (customModelFile) {
-            imageParts.push(await fileToGenerativePart(customModelFile));
-        }
-        if (stickerFile) {
-            imageParts.push(await fileToGenerativePart(stickerFile));
-        }
-        if (personImageFile) {
-            imageParts.push(await fileToGenerativePart(personImageFile));
-        }
-        
-        const prompt = getPrompt(
-            category, adStyle, photoFormat, variations, aestheticStyle, modelGender, modelEthnicity, 
-            automotiveModification, carColor, vehicleType, customPrompt, customCarColor, 
-            colorTone, spoiler, wideBody, rims, hood, allBumper, livery, !!stickerFile, 
-            !!personImageFile, personMode, !!customModelFile, addModelToFood, objectStyle, 
-            addFoodEffects, forceOpenPackage, foodTheme, productName, productSlogan, 
-            posterStyle, socialMediaEntries, callToAction, fashionGender, fashionAge, useMannequin
-        );
+  const imageParts: Part[] = [await fileToGenerativePart(productImage)];
+  
+  if (stickerFile) {
+    imageParts.push(await fileToGenerativePart(stickerFile));
+  }
+  if (personImageFile) {
+    imageParts.push(await fileToGenerativePart(personImageFile));
+  }
+  if (customModelFile) {
+    imageParts.push(await fileToGenerativePart(customModelFile));
+  }
+  
+  imageParts.push({ text: prompt });
 
-        const allParts: Part[] = [...imageParts, { text: prompt }];
-        const generatedImages: string[] = [];
-        let warning: string | undefined = undefined;
+  try {
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: { parts: imageParts },
+        config: {
+            responseModalities: [Modality.IMAGE],
+            numberOfImages: variations
+        }
+    });
+    
+    const images: string[] = [];
+    let warning: string | undefined = undefined;
 
-        const generationPromises = Array(variations).fill(0).map(() => 
-            ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
-                contents: { parts: allParts },
-                config: {
-                    responseModalities: [Modality.IMAGE],
-                },
-            }).catch(e => {
-                console.error("Gemini API call failed for one variation:", e);
-                return null;
-            })
-        );
-        
-        const results = await Promise.all(generationPromises);
-        
-        results.forEach(response => {
-            if (response && response.candidates && response.candidates[0].content.parts) {
-                for (const part of response.candidates[0].content.parts) {
-                    if (part.inlineData) {
-                        const base64ImageBytes: string = part.inlineData.data;
-                        const imageUrl = `data:${part.inlineData.mimeType};base64,${base64ImageBytes}`;
-                        generatedImages.push(imageUrl);
-                    }
+    if (response.candidates && response.candidates.length > 0) {
+        for (const candidate of response.candidates) {
+            for (const part of candidate.content.parts) {
+                if (part.inlineData) {
+                    const base64ImageBytes: string = part.inlineData.data;
+                    const imageUrl = `data:${part.inlineData.mimeType};base64,${base64ImageBytes}`;
+                    images.push(imageUrl);
                 }
             }
-        });
-
-        if (generatedImages.length === 0 && variations > 0) {
-            throw new Error("Gagal menghasilkan gambar dari AI. Layanan mungkin sedang sibuk atau input tidak sesuai. Silakan coba lagi.");
-        } else if (generatedImages.length < variations) {
-            warning = `Hanya berhasil membuat ${generatedImages.length} dari ${variations} variasi yang diminta.`;
         }
-        
-        return { images: generatedImages, warning };
-
-    } catch (e: any) {
-        console.error("Error in generateAdPhotos:", e);
-        throw new Error(e.message || "Terjadi kesalahan yang tidak diketahui saat menghasilkan gambar.");
     }
+
+    if (images.length === 0) {
+        throw new Error('AI tidak dapat menghasilkan gambar. Coba ubah prompt atau gambar Anda.');
+    }
+    
+    if (images.length < variations) {
+        warning = `AI hanya dapat menghasilkan ${images.length} dari ${variations} variasi yang diminta. Ini mungkin karena permintaan Anda terlalu kompleks.`;
+    }
+
+    return { images, warning };
+
+  } catch (error: any) {
+    console.error("Gemini API error:", error);
+    let errorMessage = "Terjadi kesalahan saat berkomunikasi dengan AI. Silakan coba lagi.";
+    if (error.message) {
+        // Simple check for common safety/policy issues.
+        if (error.message.includes('SAFETY')) {
+            errorMessage = "Permintaan Anda mungkin melanggar kebijakan keamanan. Coba gunakan prompt yang berbeda.";
+        } else {
+            errorMessage = `Error dari AI: ${error.message}`;
+        }
+    }
+    throw new Error(errorMessage);
+  }
 };
