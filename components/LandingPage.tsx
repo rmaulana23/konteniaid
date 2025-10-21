@@ -216,10 +216,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess, hasVali
                         <h3 className="text-2xl font-semibold text-gray-900">Akses Uji Coba</h3>
                         <div className="flex items-end justify-center gap-2 my-4">
                             <p className="text-2xl font-medium text-gray-500 line-through">
-                                Rp 149rb
+                                Rp 199rb
                             </p>
                             <p className="text-5xl font-extrabold text-gray-900">
-                                Rp 79rb
+                                Rp 99rb
                             </p>
                         </div>
                         <p className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-teal-500 mb-6">Hanya untuk 100 orang pertama</p>
