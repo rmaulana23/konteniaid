@@ -61,6 +61,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (existingProfile) {
         setProfile(existingProfile as Profile);
       } else if (fetchError && fetchError.code === 'PGRST116') {
+        const guestCount = parseInt(localStorage.getItem('guestGenerationCount') || '0', 10);
         const userMetadata = currentUser.user_metadata;
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
@@ -68,7 +69,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: currentUser.id,
             email: currentUser.email,
             full_name: userMetadata.full_name || userMetadata.name,
-            generation_limit: 5, // Default free limit
+            generation_limit: 5, // Default free limit for new users
+            generation_count: guestCount, // Carry over guest usage
           })
           .select()
           .single();
@@ -78,6 +80,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           setProfile(null);
         } else {
           setProfile(newProfile as Profile);
+          localStorage.removeItem('guestGenerationCount'); // Clean up guest data after transfer
         }
       } else if (fetchError) {
         console.error("Error fetching profile:", fetchError);

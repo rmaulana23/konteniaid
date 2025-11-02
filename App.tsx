@@ -70,6 +70,17 @@ type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about' | '
 const App: React.FC = () => {
   const { user, profile, setProfile, loading } = useUser();
   
+  const [guestGenerations, setGuestGenerations] = useState<number>(() => {
+    return parseInt(localStorage.getItem('guestGenerationCount') || '0', 10);
+  });
+
+  useEffect(() => {
+    // Save guest generation count to local storage whenever it changes
+    if (!user) {
+        localStorage.setItem('guestGenerationCount', guestGenerations.toString());
+    }
+  }, [guestGenerations, user]);
+
   // App State
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -259,17 +270,25 @@ const App: React.FC = () => {
   const handleSocialMediaChange = (id: number, field: 'platform' | 'handle', value: string) => setSocialMediaEntries(prev => prev.map(entry => entry.id === id ? { ...entry, [field]: value } : entry));
 
   const handleGenerateClick = async () => {
-    if (!user || !profile) {
-      setError('Silakan login terlebih dahulu untuk membuat gambar.');
-      return;
+    // Check generation limits first
+    if (user && profile) {
+        if (profile.generation_count >= profile.generation_limit) {
+            setError(`Anda telah mencapai batas ${profile.generation_limit} generasi harian. Silakan upgrade untuk akses lebih banyak atau coba lagi besok.`);
+            setIsPaymentModalOpen(true);
+            return;
+        }
+    } else if (!user) { // Guest user logic
+        const guestLimit = 3;
+        if (guestGenerations >= guestLimit) {
+            setError('Anda telah mencapai batas 3 generasi gratis. Silakan login untuk melanjutkan.');
+            return;
+        }
+        if (guestGenerations + variations > guestLimit) {
+            setError(`Generasi yang Anda minta (${variations}) melebihi sisa coba gratis Anda (${guestLimit - guestGenerations}). Silakan kurangi jumlah variasi atau login.`);
+            return;
+        }
     }
-    
-    if (profile.generation_count >= profile.generation_limit) {
-      setError(`Anda telah mencapai batas ${profile.generation_limit} generasi harian. Silakan upgrade untuk akses lebih banyak atau coba lagi besok.`);
-      setIsPaymentModalOpen(true); // Open payment modal when limit is reached
-      return;
-    }
-    
+
     if (!imageFile || !selectedCategory) {
       setError('Silakan upload foto produk dan pilih kategori terlebih dahulu.');
       return;
@@ -300,19 +319,22 @@ const App: React.FC = () => {
       setGeneratedImages(result.images);
       if (result.warning) setWarning(result.warning);
 
-      // Update generation count in Supabase
-      const newCount = profile.generation_count + result.images.length;
-      const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ generation_count: newCount })
-          .eq('id', user.id);
-      
-      if (updateError) {
-          console.error('Failed to update generation count:', updateError);
-          setWarning(prev => (prev ? prev + ' ' : '') + 'Gagal menyimpan progres Anda, tapi jangan khawatir, gambar berhasil dibuat.');
+      // Update generation count based on login status
+      if (user && profile) {
+          const newCount = profile.generation_count + result.images.length;
+          const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ generation_count: newCount })
+              .eq('id', user.id);
+          
+          if (updateError) {
+              console.error('Failed to update generation count:', updateError);
+              setWarning(prev => (prev ? prev + ' ' : '') + 'Gagal menyimpan progres Anda, tapi jangan khawatir, gambar berhasil dibuat.');
+          } else {
+              setProfile(prev => prev ? { ...prev, generation_count: newCount } : null);
+          }
       } else {
-          // Update local state to reflect the change immediately
-          setProfile(prev => prev ? { ...prev, generation_count: newCount } : null);
+          setGuestGenerations(prev => prev + result.images.length);
       }
 
     } catch (err: any) {
@@ -325,7 +347,7 @@ const App: React.FC = () => {
 
   const selectedCategoryLabel = PRODUCT_CATEGORIES.find(c => c.value === selectedCategory)?.label || '';
   
-  if (loading) {
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex flex-col bg-brand-background items-center justify-center">
         <Spinner />
@@ -375,6 +397,12 @@ const App: React.FC = () => {
             <div className={`grid grid-cols-1 ${gridColsClass} gap-6 items-start`}>
               
               <div className="lg:col-span-1 space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-100">
+                {!user && (
+                    <div className="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-lg text-sm text-center">
+                        <p>Anda memiliki sisa <strong>{3 - guestGenerations}</strong> coba gratis.</p>
+                        <p className="text-xs mt-1">Login untuk mendapatkan kuota lebih banyak!</p>
+                    </div>
+                )}
                 <div>
                     <ImageUploader onImageUpload={handleImageUpload} uploadedImagePreview={uploadedImagePreview} />
                     <p className="text-xs text-gray-500 mt-1 px-1">Unggah foto produk Anda dengan latar belakang polos untuk hasil terbaik.</p>
@@ -759,6 +787,7 @@ const App: React.FC = () => {
         onOpenTerms={() => setIsTermsModalOpen(true)}
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
         onGetAccess={() => setIsPaymentModalOpen(true)}
+        guestGenerations={guestGenerations}
       />
       <main className="flex-grow">
         {renderPage()}
