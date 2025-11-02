@@ -30,27 +30,19 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getInitialSession = async () => {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-            setUser(session.user);
-            await fetchAndSetProfile(session.user);
-        }
-        setLoading(false);
-    };
-    
-    getInitialSession();
+    // onAuthStateChange menangani semuanya: sesi awal, login, logout.
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setLoading(true);
-      if (event === 'SIGNED_OUT') {
-        setUser(null);
+      if (currentUser) {
+        await fetchAndSetProfile(currentUser);
+      } else {
         setProfile(null);
-      } else if (session?.user) {
-        setUser(session.user);
-        await fetchAndSetProfile(session.user);
       }
-      setLoading(false);
+      
+      // Hentikan loading hanya setelah pemeriksaan auth pertama selesai.
+      setLoading(false); 
     });
 
     return () => {
@@ -101,7 +93,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-            redirectTo: window.location.href,
+            redirectTo: window.location.origin,
         },
     });
     if (error) console.error("Error logging in:", error.message);
@@ -109,6 +101,8 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
+    setUser(null);
+    setProfile(null);
     if (error) console.error("Error logging out:", error.message);
   };
 
