@@ -7,8 +7,9 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ value, limit, theme = 'light' }) => {
-  const percentage = limit > 0 ? (value / limit) * 100 : 0;
-  const isOverLimit = percentage > 100;
+  const isUnlimited = limit > 99999;
+  const percentage = isUnlimited ? 100 : limit > 0 ? (value / limit) * 100 : 0;
+  const isOverLimit = !isUnlimited && percentage > 100;
   
   // Menentukan warna progress bar berdasarkan persentase
   const barColor = isOverLimit 
@@ -25,10 +26,10 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ value, limit, theme = 'light'
     <div className="w-full">
         <div className="flex justify-between items-center mb-1">
             <span className={`text-xs font-semibold ${primaryTextColor}`}>
-                {value} / {limit}
+                {value} / {isUnlimited ? '∞' : limit}
             </span>
             <span className={`text-xs font-semibold ${secondaryTextColor}`}>
-                {Math.round(percentage)}%
+                {isUnlimited ? 'Unlimited' : `${Math.round(percentage)}%`}
             </span>
         </div>
         <div className={`w-full ${barBackgroundColor} rounded-full h-2.5`}>

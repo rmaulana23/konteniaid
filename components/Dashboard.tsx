@@ -38,8 +38,6 @@ const Dashboard: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [savingStatus, setSavingStatus] = useState<Record<string, boolean>>({});
 
-  const PAID_USER_LIMIT = 50;
-
   useEffect(() => {
     const fetchProfiles = async () => {
       setLoading(true);
@@ -68,11 +66,11 @@ const Dashboard: React.FC = () => {
 
     const updatePayload: Partial<Profile> = { is_paid: newStatus };
 
-    // Smart Default: Jika pengguna diupgrade dari gratis ke berbayar,
-    // setel batas default ke 50. Tapi JANGAN ubah jika mereka di-downgrade.
+    // Smart Default: Jika pengguna diupgrade ke berbayar, berikan akses unlimited.
+    // Jangan ubah batas jika mereka di-downgrade.
     if (newStatus === true && !originalProfile.is_paid) {
-        updatePayload.generation_limit = PAID_USER_LIMIT;
-        updatePayload.generation_count = 0; // Juga reset hitungan hariannya
+        updatePayload.generation_limit = 999999; // Unlimited Access
+        updatePayload.generation_count = 0; // Reset hitungan harian
         updatePayload.last_reset_at = new Date().toISOString();
     }
     
@@ -110,12 +108,11 @@ const Dashboard: React.FC = () => {
 
     if (error) {
         setError(`Gagal menyimpan batas untuk ${profileToSave.email}.`);
-        // Note: We don't revert the UI state here to allow the admin to retry.
     }
     
     setTimeout(() => {
         setSavingStatus(prev => ({ ...prev, [profileId]: false }));
-    }, 1500); // Keep "saving" state for a moment for user feedback
+    }, 1500);
   };
   
   const filteredProfiles = useMemo(() => {
@@ -192,7 +189,6 @@ const Dashboard: React.FC = () => {
                     <ToggleSwitch 
                         checked={profile.is_paid}
                         onChange={() => handlePaymentStatusChange(profile.id, !profile.is_paid)}
-                        disabled={profile.is_admin}
                     />
                   </td>
                   <td className="px-6 py-4">
@@ -201,12 +197,11 @@ const Dashboard: React.FC = () => {
                             type="number"
                             value={profile.generation_limit}
                             onChange={(e) => handleLimitChange(profile.id, e.target.value)}
-                            disabled={profile.is_admin}
                             className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-primary disabled:bg-gray-100"
                         />
                         <button
                             onClick={() => handleSaveLimit(profile.id)}
-                            disabled={savingStatus[profile.id] || profile.is_admin}
+                            disabled={savingStatus[profile.id]}
                             className="px-3 py-1 text-xs font-semibold text-white bg-brand-primary rounded-md hover:bg-brand-secondary disabled:bg-gray-400 transition-colors"
                         >
                             {savingStatus[profile.id] ? 'Menyimpan...' : 'Simpan'}
