@@ -65,7 +65,7 @@ import {
   SOCIAL_MEDIA_PLATFORM_OPTIONS,
 } from './constants';
 
-type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about';
+type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about' | 'dashboard';
 
 const App: React.FC = () => {
   const { user, profile, setProfile, loading } = useUser();
@@ -124,6 +124,15 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
+  // Admin redirect logic
+  useEffect(() => {
+    // If profile is loaded, user is an admin, and they are on the landing/category page, redirect to dashboard.
+    // This allows them to navigate to other pages like FAQ without being forced back.
+    if (profile?.is_admin && (page === 'landing' || page === 'category')) {
+      setPage('dashboard');
+    }
+  }, [profile, page]);
+
   const resetGeneratorState = () => {
     setSelectedCategory(null);
     setImageFile(null);
@@ -171,6 +180,7 @@ const App: React.FC = () => {
 
   const handleGoHome = () => {
     resetGeneratorState();
+    // For admins, "home" is the dashboard. The useEffect will handle the redirect.
     setPage('landing');
   };
 
@@ -323,27 +333,6 @@ const App: React.FC = () => {
       </div>
     );
   }
-  
-  if (profile?.is_admin) {
-      return (
-        <div className="min-h-screen flex flex-col bg-brand-background">
-          <Header
-            onGoHome={handleGoHome}
-            onGoToFAQ={() => {}}
-            onGoToAbout={() => {}}
-            onOpenTerms={() => setIsTermsModalOpen(true)}
-            onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
-            onGetAccess={() => {}}
-          />
-           <Dashboard />
-          <Footer 
-            onOpenSaran={() => {}}
-            onOpenTerms={() => setIsTermsModalOpen(true)}
-            onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
-          />
-        </div>
-      );
-  }
 
   const renderPage = () => {
     switch (page) {
@@ -354,6 +343,7 @@ const App: React.FC = () => {
       case 'faq': return <FAQPage />;
       case 'saran': return <SuggestionPage />;
       case 'about': return <AboutPage />;
+      case 'dashboard': return <Dashboard />;
       case 'generator':
         if (!selectedCategory) {
           setPage('category');
