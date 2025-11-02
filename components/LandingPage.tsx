@@ -130,7 +130,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, onGetAccess }) => {
                     <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-gray-600">
                         Gunakan kecerdasan AI untuk mengubah fotomu menjadi visual iklan yang memukau.
                     </p>
-                    <button onClick={user ? onStart : login} className={ctaButtonClass}>
+                    <button onClick={onStart} className={ctaButtonClass}>
                         Coba GRATIS Sekarang
                     </button>
                 </div>
