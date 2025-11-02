@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccessfulPayment: () => void;
   isBlocking?: boolean;
+  user: User | null;
+  login: () => void;
 }
 
 const CloseIcon = () => (
@@ -21,8 +24,18 @@ const WhatsAppIcon = () => (
     </svg>
 );
 
+const LoginIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+    <path fill="none" d="M0 0h48v48H0z"></path>
+  </svg>
+);
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessfulPayment, isBlocking = false }) => {
+
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessfulPayment, isBlocking = false, user, login }) => {
   const [copied, setCopied] = useState(false);
   const accountNumber = '1671291391';
   const whatsappNumber = '6281517361321';
@@ -63,6 +76,45 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
           setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
       });
   }
+  
+  const handlePaymentClick = (e: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    if (!user) {
+        e.preventDefault();
+        login();
+        onClose();
+    } else {
+        onSuccessfulPayment();
+        // The link will open naturally for the <a> tag
+    }
+  };
+
+  const ActionButton = () => {
+    if (user) {
+      return (
+        <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handlePaymentClick}
+            className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+        >
+            <WhatsAppIcon />
+            Kirim Bukti via WhatsApp
+        </a>
+      );
+    } else {
+      return (
+        <button
+            onClick={handlePaymentClick}
+            className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
+        >
+            <LoginIcon />
+            Login untuk Melanjutkan
+        </button>
+      );
+    }
+  };
+
 
   return (
     <div
@@ -104,19 +156,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
         </div>
         
         <p className="text-xs text-gray-500 mb-6">
-            Setelah transfer, klik tombol di bawah untuk mengirim bukti pembayaran ke WhatsApp. <strong>Tunggu Konfirmasi</strong> dari Admin melalui WhatsApp, jika sudah Anda bisa akses semua fitur kembali.
+            {user 
+              ? "Setelah transfer, klik tombol di bawah untuk mengirim bukti pembayaran. Tunggu konfirmasi dari Admin untuk mendapatkan akses penuh."
+              : "Anda perlu login terlebih dahulu sebelum bisa mengonfirmasi pembayaran."
+            }
         </p>
+        
+        <ActionButton />
 
-        <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={onSuccessfulPayment}
-            className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white font-bold py-3 px-8 rounded-lg text-lg flex items-center justify-center gap-2 transition-all duration-300 transform hover:scale-105"
-        >
-            <WhatsAppIcon />
-            Kirim Bukti via WhatsApp
-        </a>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -68,7 +69,7 @@ import {
 type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about' | 'dashboard';
 
 const App: React.FC = () => {
-  const { user, profile, setProfile, loading } = useUser();
+  const { user, profile, setProfile, loading, login } = useUser();
   
   const [guestGenerations, setGuestGenerations] = useState<number>(() => {
     return parseInt(localStorage.getItem('guestGenerationCount') || '0', 10);
@@ -804,6 +805,8 @@ const App: React.FC = () => {
         onSuccessfulPayment={() => {
             setIsPaymentModalOpen(false);
         }}
+        user={user}
+        login={login}
       />
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
       <PrivacyPolicyModal isOpen={isPrivacyPolicyModalOpen} onClose={() => setIsPrivacyPolicyModalOpen(false)} />
