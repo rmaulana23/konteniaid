@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../services/supabase';
-import type { Profile } from '../contexts/AuthContext';
+import type { Profile } from '../contexts/UserContext';
 import ProgressBar from './ProgressBar';
 
 // Komponen Toggle Switch

@@ -9,14 +9,15 @@ import OptionSelector from './components/OptionSelector';
 import ImageGrid from './components/ImageGrid';
 import Spinner from './components/Spinner';
 import PaymentModal from './components/PaymentModal';
-import AccessCodeModal from './components/AccessCodeModal';
 import FAQPage from './components/FAQPage';
-import NotificationToast from './components/NotificationToast'; // Import the new toast component
+import NotificationToast from './components/NotificationToast';
 import TermsModal from './components/TermsModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
-import SuggestionPage from './components/SuggestionPage'; // Import SuggestionPage
-import AboutPage from './components/AboutPage'; // Import AboutPage
+import SuggestionPage from './components/SuggestionPage';
+import AboutPage from './components/AboutPage';
+import Dashboard from './components/Dashboard';
 
+import { useUser } from './contexts/UserContext';
 import { supabase } from './services/supabase';
 import { generateAdPhotos } from './services/geminiService';
 
@@ -66,127 +67,20 @@ import {
 
 type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about';
 
-const GUEST_GENERATION_LIMIT = 3;
-
-// Fungsi untuk membuat ID perangkat yang lebih andal dan konsisten di berbagai browser
-const getSimpleDeviceId = async (): Promise<string> => {
-    const components: (string | number | undefined)[] = [];
-
-    // Screen properties (sangat stabil di berbagai browser)
-    components.push(window.screen.width);
-    components.push(window.screen.height);
-    components.push(window.screen.colorDepth);
-    components.push(window.screen.pixelDepth);
-
-    // Hardware properties (cukup stabil)
-    components.push(navigator.hardwareConcurrency);
-    // 'deviceMemory' tidak standar, tetapi memberikan keunikan tambahan di browser yang mendukung
-    components.push((navigator as any).deviceMemory); 
-
-    // Timezone (stabil untuk satu sesi)
-    components.push(new Date().getTimezoneOffset());
-    
-    // Platform (stabil)
-    components.push(navigator.platform);
-
-    // Gabungkan semua komponen menjadi satu string unik
-    const identifier = components.join('|');
-
-    // Fungsi hash sederhana (djb2) untuk menghasilkan ID numerik
-    let hash = 5381;
-    for (let i = 0; i < identifier.length; i++) {
-        hash = (hash * 33) ^ identifier.charCodeAt(i);
-    }
-    return String(hash >>> 0); // Pastikan hasilnya integer positif
-};
-
-
 const App: React.FC = () => {
+  const { user, profile, setProfile, loading } = useUser();
+  
   // App State
   const [page, setPage] = useState<Page>('landing');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
-  const [isAccessCodeModalOpen, setIsAccessCodeModalOpen] = useState(false);
-  const [showTrialToast, setShowTrialToast] = useState(false); // State for the new notification
-  
-  // Guest State with Device ID
-  const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [guestGenerationCount, setGuestGenerationCount] = useState<number>(0);
-  const [hasValidAccessCode, setHasValidAccessCode] = useState<boolean>(false);
-  const [pendingCategory, setPendingCategory] = useState<ProductCategory | null>(null);
-
-  // Initialize Device ID and load guest data from Supabase for persistence
-  useEffect(() => {
-    const initDevice = async () => {
-        const id = await getSimpleDeviceId();
-        setDeviceId(id);
-
-        if (id) {
-            try {
-                // Check if device already exists in Supabase
-                const { data, error } = await supabase
-                    .from('guest_devices')
-                    .select('generation_count, has_access_code')
-                    .eq('device_id', id)
-                    .single();
-
-                if (data) {
-                    // Device exists, use its data
-                    setGuestGenerationCount(data.generation_count);
-                    setHasValidAccessCode(data.has_access_code);
-                } else if (error && error.code === 'PGRST116') { // row not found
-                    // New device, insert it with default values
-                    const now = new Date().toISOString();
-                    const { error: insertError } = await supabase
-                        .from('guest_devices')
-                        .insert({ 
-                            device_id: id, 
-                            generation_count: 0, 
-                            has_access_code: false,
-                            first_seen_at: now,
-                            last_seen_at: now,
-                        });
-                    
-                    if (insertError) {
-                        console.error("Error creating guest device record:", insertError);
-                    }
-                    setGuestGenerationCount(0);
-                    setHasValidAccessCode(false);
-                } else if (error) {
-                    console.error("Error fetching guest device data:", error);
-                    setGuestGenerationCount(0); // Fallback on error
-                    setHasValidAccessCode(false);
-                }
-            } catch (e) {
-                console.error("An exception occurred during device initialization:", e);
-                setGuestGenerationCount(0); // Fallback on exception
-                setHasValidAccessCode(false);
-            }
-        }
-    };
-    initDevice();
-  }, []);
-  
-  // Effect to show the trial notification once
-  useEffect(() => {
-    if (page === 'generator') {
-      const hasSeenToast = localStorage.getItem('hasSeenTrialNotification');
-      const isGuestUser = !hasValidAccessCode;
-
-      if (!hasSeenToast && isGuestUser) {
-        setShowTrialToast(true);
-        localStorage.setItem('hasSeenTrialNotification', 'true');
-      }
-    }
-  }, [page, hasValidAccessCode]);
-
 
   // Form State
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
-  const [photoFormat, setPhotoFormat] = useState<PhotoFormat>('9:16'); // Default to 9:16 for posters
+  const [photoFormat, setPhotoFormat] = useState<PhotoFormat>('9:16');
   const [aestheticStyle, setAestheticStyle] = useState<AestheticStyle>('cafe_minimalist');
   const [objectStyle, setObjectStyle] = useState<ObjectStyle>('surface');
   const [adStyle, setAdStyle] = useState<AdStyle>('none');
@@ -200,21 +94,15 @@ const App: React.FC = () => {
   const [customPrompt, setCustomPrompt] = useState('');
   const [customCarColor, setCustomCarColor] = useState('');
   const [addModelToFood, setAddModelToFood] = useState<'yes' | 'no'>('no');
-  // New state for Food Theme feature
   const [foodTheme, setFoodTheme] = useState<FoodTheme>('image');
   const [productName, setProductName] = useState('');
   const [productSlogan, setProductSlogan] = useState('');
   const [posterStyle, setPosterStyle] = useState<PosterStyle>('modern_clean');
   const [callToAction, setCallToAction] = useState('');
   const [socialMediaEntries, setSocialMediaEntries] = useState<SocialMediaEntry[]>([]);
-
-  // New state for Fashion Model Selection
   const [fashionGender, setFashionGender] = useState<FashionGender>('woman');
   const [fashionAge, setFashionAge] = useState<FashionAge>('adult');
   const [useMannequin, setUseMannequin] = useState<'yes' | 'no'>('no');
-
-
-  // Custom Automotive Mod State
   const [spoiler, setSpoiler] = useState<'yes' | 'no'>('no');
   const [wideBody, setWideBody] = useState<'yes' | 'no'>('no');
   const [rims, setRims] = useState<'yes' | 'no'>('no');
@@ -223,16 +111,11 @@ const App: React.FC = () => {
   const [livery, setLivery] = useState<LiveryStyle>('none');
   const [stickerFile, setStickerFile] = useState<File | null>(null);
   const [stickerPreview, setStickerPreview] = useState<string | null>(null);
-
-  // Add People State
   const [personImageFile, setPersonImageFile] = useState<File | null>(null);
   const [personImagePreview, setPersonImagePreview] = useState<string | null>(null);
   const [personMode, setPersonMode] = useState<'full_body' | 'face_only'>('full_body');
-  
-  // Custom Fashion Model State
   const [customModelFile, setCustomModelFile] = useState<File | null>(null);
   const [customModelPreview, setCustomModelPreview] = useState<string | null>(null);
-
 
   // Generation State
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -241,12 +124,6 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
 
-  const isTrialOver = useMemo(() => {
-    if (hasValidAccessCode) return false;
-    return guestGenerationCount >= GUEST_GENERATION_LIMIT;
-  }, [guestGenerationCount, hasValidAccessCode]);
-
-  
   const resetGeneratorState = () => {
     setSelectedCategory(null);
     setImageFile(null);
@@ -259,7 +136,6 @@ const App: React.FC = () => {
     setGeneratedImages([]);
     setError(null);
     setWarning(null);
-    // Reset category-specific states
     setModelGender('woman');
     setModelEthnicity('indonesian');
     setAutomotiveModification('none');
@@ -298,28 +174,15 @@ const App: React.FC = () => {
     setPage('landing');
   };
 
-  const handleGoToFAQ = () => {
-    setPage('faq');
-  };
-
-  const handleGoToAbout = () => {
-    setPage('about');
-  };
-  
-  const handleGoToSaran = () => {
-    setPage('saran');
-  };
+  const handleGoToFAQ = () => setPage('faq');
+  const handleGoToAbout = () => setPage('about');
+  const handleGoToSaran = () => setPage('saran');
 
   const handleStart = () => {
     setPage('category');
   };
   
   const handleSelectCategory = (category: ProductCategory) => {
-    if (isTrialOver) {
-      setPendingCategory(category);
-      setIsAccessCodeModalOpen(true);
-      return;
-    }
     setSelectedCategory(category);
     // Set default style for the selected category
     if (category === 'food_beverage') {
@@ -342,49 +205,6 @@ const App: React.FC = () => {
     setPage('generator');
   };
 
-  const handleVerifyAccessCode = async (code: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from('access_codes')
-        .select('code, is_active')
-        .eq('code', code.trim())
-        .single();
-
-      if (error || !data || !data.is_active) {
-        console.error('Access code verification error:', error?.message);
-        return false;
-      }
-
-      // Code is valid. Now update the guest device record in Supabase.
-      if (deviceId) {
-          const { error: updateError } = await supabase
-            .from('guest_devices')
-            .update({ has_access_code: true })
-            .eq('device_id', deviceId);
-
-          if (updateError) {
-            console.error("Error updating guest device access status:", updateError);
-            // Even if update fails, we can proceed optimistically for better UX
-          }
-          setHasValidAccessCode(true); // Update state
-      }
-
-      setIsAccessCodeModalOpen(false);
-      
-      if (pendingCategory) {
-        handleSelectCategory(pendingCategory); // Use the same logic to set defaults
-        setPendingCategory(null);
-      }
-
-      return true;
-
-    } catch (e) {
-      console.error('An exception occurred during code verification:', e);
-      return false;
-    }
-  };
-
-
   const handleImageUpload = (file: File) => {
     setImageFile(file);
     const previewUrl = URL.createObjectURL(file);
@@ -395,8 +215,7 @@ const App: React.FC = () => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
         setCustomModelFile(file);
-        const previewUrl = URL.createObjectURL(file);
-        setCustomModelPreview(previewUrl);
+        setCustomModelPreview(URL.createObjectURL(file));
     } else {
         setCustomModelFile(null);
         setCustomModelPreview(null);
@@ -407,8 +226,7 @@ const App: React.FC = () => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
         setStickerFile(file);
-        const previewUrl = URL.createObjectURL(file);
-        setStickerPreview(previewUrl);
+        setStickerPreview(URL.createObjectURL(file));
     } else {
         setStickerFile(null);
         setStickerPreview(null);
@@ -419,55 +237,36 @@ const App: React.FC = () => {
     const file = event.target.files?.[0];
     if (file && file.type.startsWith('image/')) {
         setPersonImageFile(file);
-        const previewUrl = URL.createObjectURL(file);
-        setPersonImagePreview(previewUrl);
+        setPersonImagePreview(URL.createObjectURL(file));
     } else {
         setPersonImageFile(null);
         setPersonImagePreview(null);
     }
   };
   
-  const handleAddSocialMedia = () => {
-    setSocialMediaEntries(prev => [...prev, { id: Date.now(), platform: 'instagram', handle: '' }]);
-  };
-
-  const handleRemoveSocialMedia = (id: number) => {
-      setSocialMediaEntries(prev => prev.filter(entry => entry.id !== id));
-  };
-
-  const handleSocialMediaChange = (id: number, field: 'platform' | 'handle', value: string) => {
-      setSocialMediaEntries(prev => prev.map(entry => 
-          entry.id === id ? { ...entry, [field]: value } : entry
-      ));
-  };
+  const handleAddSocialMedia = () => setSocialMediaEntries(prev => [...prev, { id: Date.now(), platform: 'instagram', handle: '' }]);
+  const handleRemoveSocialMedia = (id: number) => setSocialMediaEntries(prev => prev.filter(entry => entry.id !== id));
+  const handleSocialMediaChange = (id: number, field: 'platform' | 'handle', value: string) => setSocialMediaEntries(prev => prev.map(entry => entry.id === id ? { ...entry, [field]: value } : entry));
 
   const handleGenerateClick = async () => {
+    if (!user || !profile) {
+      setError('Silakan login terlebih dahulu untuk membuat gambar.');
+      return;
+    }
+    
+    if (profile.generation_count >= profile.generation_limit) {
+      setError(`Anda telah mencapai batas ${profile.generation_limit} generasi harian. Silakan upgrade untuk akses lebih banyak atau coba lagi besok.`);
+      setIsPaymentModalOpen(true); // Open payment modal when limit is reached
+      return;
+    }
+    
     if (!imageFile || !selectedCategory) {
       setError('Silakan upload foto produk dan pilih kategori terlebih dahulu.');
       return;
     }
-
     if (selectedCategory === 'food_beverage' && foodTheme === 'poster' && (!productName.trim() || !productSlogan.trim())) {
       setError('Untuk tema Poster, Nama Produk dan Slogan/Promo wajib diisi.');
       return;
-    }
-
-    if (isTrialOver) {
-      setIsAccessCodeModalOpen(true);
-      return;
-    }
-
-    // New: Check if guest has enough credits for the requested variations/video
-    if (!hasValidAccessCode) {
-      const remainingCredits = GUEST_GENERATION_LIMIT - guestGenerationCount;
-      const creditsNeeded = variations;
-      if (creditsNeeded > remainingCredits) {
-          const pluralVariations = variations > 1 ? 'variasi' : 'variasi';
-          const pluralCredits = remainingCredits > 1 ? 'kredit' : 'kredit';
-          const errorMessage = `Anda meminta ${variations} ${pluralVariations}, tetapi hanya memiliki sisa ${remainingCredits} ${pluralCredits} gratis. Silakan kurangi jumlah variasi atau upgrade.`;
-        setError(errorMessage);
-        return;
-      }
     }
 
     setIsLoading(true);
@@ -478,70 +277,32 @@ const App: React.FC = () => {
     const isFashionWithCustomModel = selectedCategory === 'fashion_lifestyle' && fashionGender === 'custom';
     const isFoodWithCustomModel = selectedCategory === 'food_beverage' && addModelToFood === 'yes' && modelGender === 'custom';
 
-
     try {
       setLoadingMessage('AI sedang bekerja, mohon tunggu...');
       const result = await generateAdPhotos(
-        imageFile,
-        selectedCategory,
-        adStyle,
-        variations,
-        photoFormat,
-        aestheticStyle,
-        modelGender,
-        modelEthnicity,
-        automotiveModification,
-        carColor,
-        vehicleType,
-        customPrompt,
-        customCarColor,
-        colorTone,
-        spoiler,
-        wideBody,
-        rims,
-        hood,
-        allBumper,
-        livery,
-        stickerFile,
-        personImageFile,
-        personImageFile ? personMode : undefined,
+        imageFile, selectedCategory, adStyle, variations, photoFormat, aestheticStyle, modelGender, modelEthnicity,
+        automotiveModification, carColor, vehicleType, customPrompt, customCarColor, colorTone, spoiler, wideBody, rims, hood,
+        allBumper, livery, stickerFile, personImageFile, personImageFile ? personMode : undefined,
         (isFashionWithCustomModel || isFoodWithCustomModel) ? customModelFile : null,
-        addModelToFood,
-        selectedCategory === 'food_beverage' ? objectStyle : undefined,
-        undefined, // forceOpenPackage is now handled inside geminiService
-        foodTheme,
-        productName,
-        productSlogan,
-        posterStyle,
-        socialMediaEntries,
-        callToAction,
-        fashionGender,
-        fashionAge,
-        useMannequin
+        addModelToFood, selectedCategory === 'food_beverage' ? objectStyle : undefined, undefined, foodTheme, productName,
+        productSlogan, posterStyle, socialMediaEntries, callToAction, fashionGender, fashionAge, useMannequin
       );
       setGeneratedImages(result.images);
-      if (result.warning) {
-        setWarning(result.warning);
-      }
-      
-      // If user is a guest, update their count based on successful generations
-      if (!hasValidAccessCode && deviceId) {
-        const creditsUsed = result.images.length;
-        if (creditsUsed > 0) {
-            const newCount = guestGenerationCount + creditsUsed;
-            setGuestGenerationCount(newCount); // Update state immediately for UI responsiveness
+      if (result.warning) setWarning(result.warning);
 
-            // Asynchronously update Supabase
-            supabase
-              .from('guest_devices')
-              .update({ generation_count: newCount, last_seen_at: new Date().toISOString() })
-              .eq('device_id', deviceId)
-              .then(({ error: updateError }) => {
-                if (updateError) {
-                  console.error("Failed to sync guest generation count:", updateError);
-                }
-              });
-        }
+      // Update generation count in Supabase
+      const newCount = profile.generation_count + result.images.length;
+      const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ generation_count: newCount })
+          .eq('id', user.id);
+      
+      if (updateError) {
+          console.error('Failed to update generation count:', updateError);
+          setWarning(prev => (prev ? prev + ' ' : '') + 'Gagal menyimpan progres Anda, tapi jangan khawatir, gambar berhasil dibuat.');
+      } else {
+          // Update local state to reflect the change immediately
+          setProfile(prev => prev ? { ...prev, generation_count: newCount } : null);
       }
 
     } catch (err: any) {
@@ -553,19 +314,46 @@ const App: React.FC = () => {
   };
 
   const selectedCategoryLabel = PRODUCT_CATEGORIES.find(c => c.value === selectedCategory)?.label || '';
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-brand-background items-center justify-center">
+        <Spinner />
+        <p className="mt-4 text-gray-600">Memuat sesi...</p>
+      </div>
+    );
+  }
+  
+  if (profile?.is_admin) {
+      return (
+        <div className="min-h-screen flex flex-col bg-brand-background">
+          <Header
+            onGoHome={handleGoHome}
+            onGoToFAQ={() => {}}
+            onGoToAbout={() => {}}
+            onOpenTerms={() => setIsTermsModalOpen(true)}
+            onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
+            onGetAccess={() => {}}
+          />
+           <Dashboard />
+          <Footer 
+            onOpenSaran={() => {}}
+            onOpenTerms={() => setIsTermsModalOpen(true)}
+            onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
+          />
+        </div>
+      );
+  }
 
   const renderPage = () => {
     switch (page) {
       case 'landing':
-        return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} hasValidAccessCode={hasValidAccessCode} />;
+        return <LandingPage onStart={handleStart} onGetAccess={() => setIsPaymentModalOpen(true)} />;
       case 'category':
         return <CategorySelectorPage onSelectCategory={handleSelectCategory} />;
-      case 'faq':
-        return <FAQPage />;
-      case 'saran':
-        return <SuggestionPage />;
-      case 'about':
-        return <AboutPage />;
+      case 'faq': return <FAQPage />;
+      case 'saran': return <SuggestionPage />;
+      case 'about': return <AboutPage />;
       case 'generator':
         if (!selectedCategory) {
           setPage('category');
@@ -578,28 +366,19 @@ const App: React.FC = () => {
         const GenerateButton = (
             <button
               onClick={handleGenerateClick}
-              disabled={isLoading || !imageFile || isTrialOver}
+              disabled={isLoading || !imageFile}
               className="w-full bg-gradient-to-r from-brand-primary to-teal-500 hover:from-brand-secondary hover:to-teal-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? ( <> <Spinner /> {'Membuat Gambar...'} </> ) : 'Generate Foto Iklan' }
             </button>
         );
         
-        const RemoveIcon = () => (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        );
-
+        const RemoveIcon = () => (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>);
 
         return (
           <div className="container mx-auto p-4 sm:p-6 lg:p-8 max-w-7xl w-full">
             <div className="mb-4 text-sm text-gray-500">
-                <button 
-                  onClick={() => {
-                    resetGeneratorState();
-                    setPage('category');
-                  }} 
-                  className="hover:text-brand-secondary"
-                >
+                <button onClick={() => { resetGeneratorState(); setPage('category'); }} className="hover:text-brand-secondary">
                   Pilih Kategori
                 </button> &gt; <span>{selectedCategoryLabel}</span>
             </div>
@@ -743,7 +522,7 @@ const App: React.FC = () => {
                                 options={YES_NO_OPTIONS}
                                 selectedValue={addModelToFood}
                                 onValueChange={(v) => {
-                                  setAddModelToFood(v);
+                                  setAddModelToFood(v as 'yes' | 'no');
                                   if (v === 'yes') {
                                     setObjectStyle('surface'); // Force surface style when model is added
                                   }
@@ -754,10 +533,10 @@ const App: React.FC = () => {
                         </div>
                         {addModelToFood === 'yes' && (
                             <div className="space-y-3 border border-gray-200 rounded-lg p-2 bg-gray-50">
-                                <OptionSelector title="Pilih Gender Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v)} />
+                                <OptionSelector title="Pilih Gender Model" options={MODEL_GENDER_OPTIONS} selectedValue={modelGender} onValueChange={(v) => setModelGender(v as ModelGender)} />
                                 
                                 {modelGender !== 'custom' && (
-                                    <OptionSelector title="Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v)} />
+                                    <OptionSelector title="Pilih Etnis Model" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v as ModelEthnicity)} />
                                 )}
 
                                 {modelGender === 'custom' && (
@@ -799,7 +578,7 @@ const App: React.FC = () => {
                                 <label className="block text-lg font-semibold mb-2 text-gray-800">Detail Model</label>
                                 <div className="space-y-4">
                                     <OptionSelector title="Pilih Usia" options={FASHION_AGE_OPTIONS} selectedValue={fashionAge} onValueChange={(v) => setFashionAge(v as FashionAge)} />
-                                    <OptionSelector title="Gunakan Manekin?" options={YES_NO_OPTIONS} selectedValue={useMannequin} onValueChange={(v) => setUseMannequin(v)} />
+                                    <OptionSelector title="Gunakan Manekin?" options={YES_NO_OPTIONS} selectedValue={useMannequin} onValueChange={(v) => setUseMannequin(v as 'yes' | 'no')} />
                                     <OptionSelector title="Pilih Etnis" options={MODEL_ETHNICITY_OPTIONS} selectedValue={modelEthnicity} onValueChange={(v) => setModelEthnicity(v as ModelEthnicity)} disabled={useMannequin === 'yes'} />
                                 </div>
                                 <p className="text-xs text-gray-500 mt-2 px-1">Opsi Etnis diabaikan jika menggunakan manekin.</p>
@@ -829,7 +608,7 @@ const App: React.FC = () => {
 
                 {selectedCategory === 'automotive' && (
                     <div>
-                        <OptionSelector title="2. Pilih Gaya Iklan" options={AUTOMOTIVE_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v)} />
+                        <OptionSelector title="2. Pilih Gaya Iklan" options={AUTOMOTIVE_AD_STYLES} selectedValue={adStyle} onValueChange={(v) => setAdStyle(v as AdStyle)} />
                         <p className="text-xs text-gray-500 mt-1 px-1">Tentukan lokasi dan suasana pemotretan untuk kendaraan Anda.</p>
                     </div>
                 )}
@@ -839,7 +618,7 @@ const App: React.FC = () => {
                         title="Jumlah Hasil Variasi"
                         options={VARIATION_OPTIONS}
                         selectedValue={variations}
-                        onValueChange={(v) => setVariations(v)}
+                        onValueChange={(v) => setVariations(v as number)}
                     />
                     <p className="text-xs text-gray-500 mt-1 px-1">Pilih berapa banyak gambar unik yang ingin Anda hasilkan sekaligus.</p>
                 </div>
@@ -899,22 +678,22 @@ const App: React.FC = () => {
                  <div className="lg:col-span-1 space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-100">
                     <h3 className="text-xl font-bold text-gray-900 border-b pb-2">Opsi Spesifik Otomotif</h3>
                     <div>
-                        <OptionSelector title="Pilih Tipe Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v)} />
+                        <OptionSelector title="Pilih Tipe Kendaraan" options={VEHICLE_TYPE_OPTIONS} selectedValue={vehicleType} onValueChange={(v) => setVehicleType(v as VehicleType)} />
                         <p className="text-xs text-gray-500 mt-1 px-1">Pilih antara mobil atau motor untuk opsi modifikasi yang sesuai.</p>
                     </div>
                     <div>
-                        <OptionSelector title="Pilih Modifikasi" options={vehicleType === 'mobil' ? AUTOMOTIVE_MODIFICATION_OPTIONS : MOTORCYCLE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v)} />
+                        <OptionSelector title="Pilih Modifikasi" options={vehicleType === 'mobil' ? AUTOMOTIVE_MODIFICATION_OPTIONS : MOTORCYCLE_MODIFICATION_OPTIONS} selectedValue={automotiveModification} onValueChange={(v) => setAutomotiveModification(v as AutomotiveModification)} />
                         <p className="text-xs text-gray-500 mt-1 px-1">Pilih gaya modifikasi yang telah ditentukan atau pilih 'Custom' untuk detail lebih lanjut.</p>
                     </div>
                     
                     {automotiveModification === 'custom' && vehicleType === 'mobil' && (
                         <div className="space-y-3 border border-gray-200 rounded-lg p-2 bg-gray-50">
-                            <OptionSelector title="Bumper & Sideskirt" options={YES_NO_OPTIONS} selectedValue={allBumper} onValueChange={(v) => setAllBumper(v)} />
-                            <OptionSelector title="Spoiler Belakang" options={YES_NO_OPTIONS} selectedValue={spoiler} onValueChange={(v) => setSpoiler(v)} />
-                            <OptionSelector title="Widebody" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v)} />
-                            <OptionSelector title="Velg Custom" options={YES_NO_OPTIONS} selectedValue={rims} onValueChange={(v) => setRims(v)} />
-                            <OptionSelector title="Kap Mesin Custom" options={YES_NO_OPTIONS} selectedValue={hood} onValueChange={(v) => setHood(v)} />
-                            <OptionSelector title="Gaya Livery" options={LIVERY_STYLE_OPTIONS} selectedValue={livery} onValueChange={(v) => setLivery(v)} />
+                            <OptionSelector title="Bumper & Sideskirt" options={YES_NO_OPTIONS} selectedValue={allBumper} onValueChange={(v) => setAllBumper(v as 'yes' | 'no')} />
+                            <OptionSelector title="Spoiler Belakang" options={YES_NO_OPTIONS} selectedValue={spoiler} onValueChange={(v) => setSpoiler(v as 'yes' | 'no')} />
+                            <OptionSelector title="Widebody" options={YES_NO_OPTIONS} selectedValue={wideBody} onValueChange={(v) => setWideBody(v as 'yes' | 'no')} />
+                            <OptionSelector title="Velg Custom" options={YES_NO_OPTIONS} selectedValue={rims} onValueChange={(v) => setRims(v as 'yes' | 'no')} />
+                            <OptionSelector title="Kap Mesin Custom" options={YES_NO_OPTIONS} selectedValue={hood} onValueChange={(v) => setHood(v as 'yes' | 'no')} />
+                            <OptionSelector title="Gaya Livery" options={LIVERY_STYLE_OPTIONS} selectedValue={livery} onValueChange={(v) => setLivery(v as LiveryStyle)} />
                             <div>
                                 <label className="block text-sm font-semibold mb-1 text-gray-700">Upload Stiker/Logo (Opsional)</label>
                                 <input type="file" onChange={handleStickerUpload} accept="image/png, image/jpeg" className="text-xs file:mr-2 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-brand-secondary hover:file:bg-blue-100"/>
@@ -924,7 +703,7 @@ const App: React.FC = () => {
                     )}
 
                     <div>
-                        <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={(v) => setCarColor(v)} />
+                        <OptionSelector title="Ubah Warna" options={CAR_COLOR_OPTIONS} selectedValue={carColor} onValueChange={(v) => setCarColor(v as CarColor)} />
                         <p className="text-xs text-gray-500 mt-1 px-1">Ganti warna kendaraan Anda atau biarkan sesuai warna aslinya.</p>
                     </div>
                     {carColor === 'custom' && (
@@ -990,8 +769,6 @@ const App: React.FC = () => {
         onOpenTerms={() => setIsTermsModalOpen(true)}
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
         onGetAccess={() => setIsPaymentModalOpen(true)}
-        isTrialOver={isTrialOver}
-        hasAccessCode={hasValidAccessCode}
       />
       <main className="flex-grow">
         {renderPage()}
@@ -1000,27 +777,13 @@ const App: React.FC = () => {
         onOpenSaran={handleGoToSaran}
         onOpenTerms={() => setIsTermsModalOpen(true)}
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
-        hasAccessCode={hasValidAccessCode}
-      />
-      <NotificationToast
-        isVisible={showTrialToast}
-        message={`Anda memiliki ${GUEST_GENERATION_LIMIT} kredit percobaan gratis. Setiap variasi yang Anda hasilkan akan menggunakan 1 kredit.`}
-        onClose={() => setShowTrialToast(false)}
+        hasAccessCode={!!user}
       />
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)} 
         onSuccessfulPayment={() => {
             setIsPaymentModalOpen(false);
-        }}
-      />
-      <AccessCodeModal 
-        isOpen={isAccessCodeModalOpen}
-        onClose={() => setIsAccessCodeModalOpen(false)}
-        onVerify={handleVerifyAccessCode}
-        onUpgradeClick={() => {
-          setIsAccessCodeModalOpen(false);
-          setIsPaymentModalOpen(true);
         }}
       />
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
