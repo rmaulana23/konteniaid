@@ -104,7 +104,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccessf
         </div>
         
         <p className="text-xs text-gray-500 mb-6">
-            Setelah transfer, klik tombol di bawah untuk mengirim bukti pembayaran ke WhatsApp. <strong>Tunggu Konfirmasi,</strong> dari Admin melalui WhatsApp, jika sudah Anda bisa akses semua fitur kembali.
+            Setelah transfer, klik tombol di bawah untuk mengirim bukti pembayaran ke WhatsApp. <strong>Tunggu Konfirmasi</strong> dari Admin melalui WhatsApp, jika sudah Anda bisa akses semua fitur kembali.
         </p>
 
         <a
