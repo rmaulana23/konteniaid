@@ -62,7 +62,31 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         .single();
 
       if (existingProfile) {
-        setProfile(existingProfile as Profile);
+        let profileToSet = existingProfile as Profile;
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+        // Reset count for free users if it has been a month
+        if (!profileToSet.is_paid && (!profileToSet.last_reset_at || new Date(profileToSet.last_reset_at) < oneMonthAgo)) {
+          const updates = {
+            generation_count: 0,
+            last_reset_at: new Date().toISOString()
+          };
+
+          const { data: updatedProfile, error: updateError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', currentUser.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error("Failed to reset monthly generation count:", updateError);
+          } else if (updatedProfile) {
+            profileToSet = updatedProfile as Profile;
+          }
+        }
+        setProfile(profileToSet);
       } else if (fetchError && fetchError.code === 'PGRST116') {
         const guestCount = parseInt(localStorage.getItem('guestGenerationCount') || '0', 10);
         const userMetadata = currentUser.user_metadata;
@@ -72,8 +96,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             id: currentUser.id,
             email: currentUser.email,
             full_name: userMetadata.full_name || userMetadata.name,
-            generation_limit: 5, // Default free limit for new users
+            generation_limit: 3, // Default free limit for new users
             generation_count: guestCount, // Carry over guest usage
+            last_reset_at: new Date().toISOString(), // Start the monthly timer
           })
           .select()
           .single();

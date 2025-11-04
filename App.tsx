@@ -274,7 +274,7 @@ const App: React.FC = () => {
     // Check generation limits first
     if (user && profile) {
         if (profile.generation_count >= profile.generation_limit) {
-            setError(`Anda telah mencapai batas ${profile.generation_limit} generasi harian. Silakan upgrade untuk akses lebih banyak atau coba lagi besok.`);
+            setError(`Anda telah mencapai batas ${profile.generation_limit} generasi bulanan. Silakan upgrade untuk akses lebih banyak atau coba lagi bulan depan.`);
             setIsPaymentModalOpen(true);
             return;
         }

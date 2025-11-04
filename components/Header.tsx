@@ -69,7 +69,9 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onGoToAbout, onOpe
             <p className="text-xs text-gray-500 truncate">{profile?.email}</p>
           </div>
           <div className="px-4 py-3">
-             <p className="text-xs font-semibold text-gray-600 mb-1">Sisa Generasi Hari Ini</p>
+             <p className="text-xs font-semibold text-gray-600 mb-1">
+                {profile?.is_paid ? 'Status Generasi' : 'Sisa Generasi Bulan Ini'}
+             </p>
              <ProgressBar value={profile?.generation_count || 0} limit={profile?.generation_limit || 0} />
           </div>
           <button onClick={() => { logout(); setIsUserMenuOpen(false); }} className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700">
@@ -141,7 +143,9 @@ const Header: React.FC<HeaderProps> = ({ onGoHome, onGoToFAQ, onGoToAbout, onOpe
                                     <p className="text-sm font-semibold truncate text-gray-800">{profile.full_name}</p>
                                     <p className="text-xs text-gray-500 truncate">{profile.email}</p>
                                     <div className="mt-2">
-                                        <p className="text-xs font-semibold text-gray-600 mb-1">Sisa Generasi</p>
+                                        <p className="text-xs font-semibold text-gray-600 mb-1">
+                                            {profile.is_paid ? 'Status Generasi' : 'Sisa Generasi Bulan Ini'}
+                                        </p>
                                         <ProgressBar value={profile.generation_count} limit={profile.generation_limit} />
                                     </div>
                                 </div>
