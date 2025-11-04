@@ -132,9 +132,11 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    if (error) console.error("Error logging out:", error.message);
+    if (error) {
+      console.error("Error logging out:", error.message);
+    }
+    // Listener onAuthStateChange akan menangani pengaturan user dan profile menjadi null,
+    // memastikan satu sumber kebenaran untuk status auth.
   };
 
   const signInWithEmail = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
