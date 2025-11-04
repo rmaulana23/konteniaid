@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import type { User } from '@supabase/supabase-js';
+import type { User, AuthError } from '@supabase/supabase-js';
 
 export interface Profile {
   id: string;
@@ -20,6 +20,9 @@ interface UserContextType {
   loading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<{ error: AuthError | null }>;
+  sendPasswordResetEmail: (email: string) => Promise<{ error: AuthError | null }>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -109,6 +112,32 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (error) console.error("Error logging out:", error.message);
   };
 
+  const signInWithEmail = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signUpWithEmail = async (email: string, password: string, fullName: string): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    return { error };
+  };
+  
+  const sendPasswordResetEmail = async (email: string): Promise<{ error: AuthError | null }> => {
+    const { error } = await supabase.auth.sendPasswordResetEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    return { error };
+  };
+
   const value = {
     user,
     profile,
@@ -116,6 +145,9 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loading,
     login,
     logout,
+    signInWithEmail,
+    signUpWithEmail,
+    sendPasswordResetEmail,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useMemo } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -17,6 +15,7 @@ import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import SuggestionPage from './components/SuggestionPage';
 import AboutPage from './components/AboutPage';
 import Dashboard from './components/Dashboard';
+import AuthModal from './components/AuthModal';
 
 import { useUser } from './contexts/UserContext';
 import { supabase } from './services/supabase';
@@ -69,7 +68,7 @@ import {
 type Page = 'landing' | 'category' | 'generator' | 'faq' | 'saran' | 'about' | 'dashboard';
 
 const App: React.FC = () => {
-  const { user, profile, setProfile, loading, login } = useUser();
+  const { user, profile, setProfile, loading } = useUser();
   
   const [guestGenerations, setGuestGenerations] = useState<number>(() => {
     return parseInt(localStorage.getItem('guestGenerationCount') || '0', 10);
@@ -84,6 +83,7 @@ const App: React.FC = () => {
 
   // App State
   const [page, setPage] = useState<Page>('landing');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
@@ -282,6 +282,7 @@ const App: React.FC = () => {
         const guestLimit = 3;
         if (guestGenerations >= guestLimit) {
             setError('Anda telah mencapai batas 3 generasi gratis. Silakan login untuk melanjutkan.');
+            setIsAuthModalOpen(true);
             return;
         }
         if (guestGenerations + variations > guestLimit) {
@@ -787,7 +788,7 @@ const App: React.FC = () => {
         onGoToAbout={handleGoToAbout}
         onOpenTerms={() => setIsTermsModalOpen(true)}
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
-        onGetAccess={() => setIsPaymentModalOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         guestGenerations={guestGenerations}
       />
       <main className="flex-grow">
@@ -799,6 +800,7 @@ const App: React.FC = () => {
         onOpenPrivacy={() => setIsPrivacyPolicyModalOpen(true)}
         hasAccessCode={!!user}
       />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
       <PaymentModal 
         isOpen={isPaymentModalOpen} 
         onClose={() => setIsPaymentModalOpen(false)} 
@@ -806,7 +808,10 @@ const App: React.FC = () => {
             setIsPaymentModalOpen(false);
         }}
         user={user}
-        login={login}
+        login={() => {
+            setIsPaymentModalOpen(false);
+            setIsAuthModalOpen(true);
+        }}
       />
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
       <PrivacyPolicyModal isOpen={isPrivacyPolicyModalOpen} onClose={() => setIsPrivacyPolicyModalOpen(false)} />
